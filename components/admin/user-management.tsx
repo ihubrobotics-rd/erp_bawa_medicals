@@ -1,87 +1,92 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Plus, Edit, Trash2, MoreHorizontal } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Search, Plus, Edit, Trash2, MoreHorizontal, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { UserForm } from "./user-form"
-import type { User } from "@/types/medical"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+91 9876543210",
-    role: "admin",
-    isActive: true,
-    createdAt: "2024-01-01",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    phone: "+91 9876543211",
-    role: "sales",
-    isActive: true,
-    createdAt: "2024-01-02",
-  },
-  {
-    id: "3",
-    name: "Mike Johnson",
-    email: "mike@example.com",
-    phone: "+91 9876543212",
-    role: "stock_manager",
-    isActive: true,
-    createdAt: "2024-01-03",
-  },
-  {
-    id: "4",
-    name: "Sarah Wilson",
-    email: "sarah@example.com",
-    phone: "+91 9876543213",
-    role: "customer",
-    isActive: false,
-    createdAt: "2024-01-04",
-  },
-]
+import { useUsers } from "@/hooks/useUsers"
+import { useRoles } from "@/hooks/useRoles"
+import { UserForm } from "./user-form"
+import { UserDetailModal } from "./user-detail-modal"
+import type { User, Role } from "@/types/medical"
 
 export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
   const [showUserForm, setShowUserForm] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+  const [viewingUserId, setViewingUserId] = useState<number | null>(null)
 
-  const filteredUsers = mockUsers.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  // Debounce search input to avoid excessive API calls
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 500)
+    return () => clearTimeout(handler)
+  }, [searchQuery])
+
+  const { usersQuery, deleteUserMutation } = useUsers(debouncedSearchQuery)
+  const { rolesQuery } = useRoles()
+
+  const users = usersQuery.data || []
+  const roles = rolesQuery.data || []
+
+  const handleAddUser = () => {
+    setSelectedUser(null)
+    setShowUserForm(true)
+  }
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user)
     setShowUserForm(true)
   }
 
-  const handleDeleteUser = (userId: string) => {
-    console.log("Deleting user:", userId)
-    // TODO: Implement user deletion
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return
+    await deleteUserMutation.mutateAsync(userToDelete.id)
+    setUserToDelete(null)
   }
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
+  const getRoleName = (roleId: number) => {
+    return roles.find((r) => r.id === roleId)?.name || "Unknown Role"
+  }
+
+  const getRoleBadgeVariant = (roleName: string) => {
+    switch (roleName.toLowerCase()) {
       case "admin":
         return "destructive"
       case "sales":
         return "default"
       case "stock_manager":
         return "secondary"
-      case "customer":
-        return "outline"
       default:
         return "outline"
     }
@@ -91,92 +96,152 @@ export function UserManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">User Management</h3>
-        <Button onClick={() => setShowUserForm(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add User
+        <Button onClick={handleAddUser}>
+          <Plus className="w-4 h-4 mr-2" /> Add User
         </Button>
       </div>
 
-      {/* Search */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
         <Input
-          placeholder="Search users..."
+          placeholder="Search by name, email, role..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
         />
       </div>
 
-      {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Users ({filteredUsers.length})</CardTitle>
+          <CardTitle>All Users ({users.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
+                <TableHead>Username</TableHead>
+                <TableHead>Email & Phone</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>Joined On</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.phone}</TableCell>
-                  <TableCell>
-                    <Badge variant={getRoleBadgeVariant(user.role)}>{user.role.replace("_", " ").toUpperCase()}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.isActive ? "default" : "secondary"}>
-                      {user.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteUser(user.id)} className="text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {usersQuery.isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    Loading users...
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    No users found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                users.map((user) => {
+                  const roleName = getRoleName(user.role)
+                  return (
+                    <TableRow
+                      key={user.id}
+                      onClick={() => setViewingUserId(user.id)}
+                      className="cursor-pointer"
+                    >
+                      <TableCell className="font-medium">{user.username}</TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">{user.email}</div>
+                        <div className="text-xs text-muted-foreground">{user.mobile}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getRoleBadgeVariant(roleName)}>
+                          {roleName.replace("_", " ").toUpperCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.is_active ? "default" : "secondary"}>
+                          {user.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setViewingUserId(user.id)
+                              }}
+                            >
+                              <Eye className="w-4 h-4 mr-2" /> View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleEditUser(user)
+                              }}
+                            >
+                              <Edit className="w-4 h-4 mr-2" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setUserToDelete(user)
+                              }}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
-      {/* User Form Modal */}
       {showUserForm && (
-        <UserForm
-          user={selectedUser}
-          onClose={() => {
-            setShowUserForm(false)
-            setSelectedUser(null)
-          }}
+        <UserForm user={selectedUser} roles={roles} onClose={() => setShowUserForm(false)} />
+      )}
+
+      {viewingUserId && (
+        <UserDetailModal
+          userId={viewingUserId}
+          roles={roles}
+          onClose={() => setViewingUserId(null)}
         />
       )}
+
+      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user "
+              {userToDelete?.username}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

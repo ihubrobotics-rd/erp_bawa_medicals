@@ -15,6 +15,7 @@ import { RoleManagement } from "@/components/admin/role-management";
 import { SystemSettings } from "@/components/admin/system-settings";
 import { ReportsSection } from "@/components/admin/reports-section";
 import ProtectedRoute from "@/components/protected-route";
+import { ModuleManagement } from "@/components/admin/Modules";
 
 const mockStats = {
   totalUsers: 156,
@@ -134,9 +135,10 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs defaultValue="users" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="users">User Management</TabsTrigger>
               <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
+              <TabsTrigger value="modules">Modules & Submodules</TabsTrigger>
               <TabsTrigger value="reports">Reports</TabsTrigger>
               <TabsTrigger value="settings">System Settings</TabsTrigger>
             </TabsList>
@@ -147,6 +149,10 @@ export default function AdminDashboard() {
 
             <TabsContent value="roles" className="space-y-6">
               <RoleManagement />
+            </TabsContent>
+
+            <TabsContent value="modules" className="space-y-6">
+              <ModuleManagement />
             </TabsContent>
 
             <TabsContent value="reports" className="space-y-6">

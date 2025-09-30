@@ -1,123 +1,211 @@
+// components/users/user-form.tsx
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { useUsers } from "@/hooks/useUsers"
+import type { User, Role } from "@/types/medical"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import type { User, UserRole } from "@/types/medical"
+import { useToast } from "@/components/ui/use-toast"
+
+// Zod schema for validation
+const userSchema = z
+  .object({
+    username: z.string().min(1, "Username is required"),
+    email: z.string().email("Invalid email address"),
+    mobile: z.string().min(10, "Mobile number must be at least 10 digits"),
+    role: z.coerce.number({ invalid_type_error: "Please select a role" }),
+    password: z.string().optional(),
+    confirm_password: z.string().optional(),
+    is_active: z.boolean().default(true),
+  })
+  .refine((data) => data.password === data.confirm_password, {
+    message: "Passwords don't match",
+    path: ["confirm_password"], // path of error
+  })
+
+type UserFormData = z.infer<typeof userSchema>
 
 interface UserFormProps {
-  user?: User | null
+  user: User | null
+  roles: Role[]
   onClose: () => void
 }
 
-export function UserForm({ user, onClose }: UserFormProps) {
-  const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    role: (user?.role as UserRole) || "customer",
-    isActive: user?.isActive ?? true,
+export function UserForm({ user, roles, onClose }: UserFormProps) {
+  const isEditMode = !!user
+  const { createUserMutation, updateUserMutation } = useUsers()
+  const { toast } = useToast()
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      is_active: true,
+    },
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log(user ? "Updating user:" : "Creating user:", formData)
-    // TODO: Implement user creation/update
-    onClose()
+  useEffect(() => {
+    if (isEditMode) {
+      reset({
+        username: user.username,
+        email: user.email,
+        mobile: user.mobile,
+        role: user.role,
+        is_active: user.is_active,
+      })
+    } else {
+      reset({
+        username: "",
+        email: "",
+        mobile: "",
+        role: undefined,
+        password: "",
+        confirm_password: "",
+        is_active: true,
+      })
+    }
+  }, [user, isEditMode, reset])
+
+  const onSubmit = async (data: UserFormData) => {
+    try {
+      if (isEditMode) {
+        // In edit mode, we don't send username or password
+        await updateUserMutation.mutateAsync({
+          id: user.id,
+          data: {
+            email: data.email,
+            mobile: data.mobile,
+            role: data.role,
+            is_active: data.is_active,
+          },
+        })
+        toast({ title: "Success", description: "User updated successfully." })
+      } else {
+        // In create mode, we send all fields
+        await createUserMutation.mutateAsync(data)
+        toast({ title: "Success", description: "User created successfully." })
+      }
+      onClose()
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || "An unexpected error occurred."
+      toast({ variant: "destructive", title: "Error", description: errorMsg })
+    }
   }
 
+  const isLoading = createUserMutation.isPending || updateUserMutation.isPending
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>{user ? "Edit User" : "Add New User"}</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-4 h-4" />
-          </Button>
-        </CardHeader>
-
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter full name"
-                required
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{isEditMode ? "Edit User" : "Add New User"}</DialogTitle>
+          <DialogDescription>
+            {isEditMode ? "Update the user details below." : "Fill in the details to create a new user."}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
+          <div>
+            <Label htmlFor="username">Username</Label>
+            <Input id="username" {...register("username")} disabled={isEditMode} />
+            {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>}
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" {...register("email")} />
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+          </div>
+          <div>
+            <Label htmlFor="mobile">Mobile</Label>
+            <Input id="mobile" {...register("mobile")} />
+            {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile.message}</p>}
+          </div>
+          <div>
+            <Label>Role</Label>
+            <Controller
+              name="role"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={String(role.id)}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.role && <p className="text-red-500 text-sm mt-1">{errors.role.message}</p>}
+          </div>
+          {!isEditMode && (
+            <>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" {...register("password")} />
+                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="confirm_password">Confirm Password</Label>
+                <Input id="confirm_password" type="password" {...register("confirm_password")} />
+                {errors.confirm_password && (
+                  <p className="text-red-500 text-sm mt-1">{errors.confirm_password.message}</p>
+                )}
+              </div>
+            </>
+          )}
+          {isEditMode && (
+            <div className="flex items-center space-x-2">
+              <Controller
+                name="is_active"
+                control={control}
+                render={({ field }) => (
+                  <Switch id="is_active" checked={field.value} onCheckedChange={field.onChange} />
+                )}
               />
+              <Label htmlFor="is_active">Active Status</Label>
             </div>
+          )}
 
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                placeholder="Enter email address"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                placeholder="+91 9876543210"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="role">Role</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value: UserRole) => setFormData((prev) => ({ ...prev, role: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="customer">Customer</SelectItem>
-                  <SelectItem value="sales">Sales Person</SelectItem>
-                  <SelectItem value="stock_manager">Stock Manager</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">Active Status</Label>
-              <Switch
-                id="isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isActive: checked }))}
-              />
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent">
-                Cancel
-              </Button>
-              <Button type="submit" className="flex-1">
-                {user ? "Update User" : "Create User"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
