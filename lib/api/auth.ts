@@ -112,7 +112,7 @@ api.interceptors.response.use(
 
       try {
         const { data } = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/accounts/refresh/`,
+          `${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh/`,
           { refresh: refreshToken }
         );
 
@@ -181,7 +181,7 @@ export const refreshAccessToken = async (): Promise<string> => {
   if (!refresh) throw new Error("No refresh token available");
 
   const { data } = await axios.post(
-    `${process.env.NEXT_PUBLIC_API_URL}/accounts/refresh/`,
+    `${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh/`,
     { refresh }
   );
 

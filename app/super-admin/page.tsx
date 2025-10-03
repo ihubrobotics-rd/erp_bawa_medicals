@@ -9,13 +9,13 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AdminHeader } from "@/components/layout/admin-header";
 import { UserManagement } from "@/components/admin/user-management";
 import { RoleManagement } from "@/components/admin/role-management";
 import { SystemSettings } from "@/components/admin/system-settings";
 import { ReportsSection } from "@/components/admin/reports-section";
 import ProtectedRoute from "@/components/protected-route";
 import { ModuleManagement } from "@/components/admin/Modules";
+import { SuperAdminHeader } from "@/components/layout/super-admin-header";
 
 const mockStats = {
   totalUsers: 156,
@@ -30,7 +30,7 @@ export default function AdminDashboard() {
   return (
     <ProtectedRoute allowedRoles={["Super admin"]}>
       <div className="min-h-screen bg-background">
-        <AdminHeader />
+        <SuperAdminHeader />
 
         <div className="container mx-auto px-4 py-6">
           {/* Dashboard Stats */}

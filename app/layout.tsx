@@ -7,6 +7,8 @@ import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider"
+
 
 export const metadata: Metadata = {
   title: "bawa-medicals",
@@ -20,14 +22,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+            <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
         <Toaster />
 
         <Suspense fallback={<div>Loading...</div>}>
           <QueryProvider>{children}</QueryProvider>
         </Suspense>
         <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   );

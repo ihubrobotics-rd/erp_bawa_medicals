@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { clearTokens, loadTokens } from "@/lib/api/auth";
+import { ModeToggle } from "../ui/ModeToggle";
 
 export function AdminHeader() {
   const router = useRouter();
@@ -36,7 +37,7 @@ export function AdminHeader() {
   };
 
   return (
-    <header className="bg-white border-b border-border sticky top-0 z-50">
+    <header className=" border-b border-border sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -74,12 +75,8 @@ export function AdminHeader() {
 
           {/* User actions */}
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-              <Badge className="absolute -top-2 -right-2 w-5 h-5 rounded-full p-0 flex items-center justify-center text-xs">
-                5
-              </Badge>
-            </Button>
+            <ModeToggle  />
+
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -91,10 +88,10 @@ export function AdminHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => router.push("/admin/settings")}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </DropdownMenuItem>
+                {/* <DropdownMenuItem >
+                 
+                  Theme
+                </DropdownMenuItem> */}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />

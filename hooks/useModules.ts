@@ -63,8 +63,8 @@ export const useSubmodules = (moduleId: number | null, search: string = "") => {
   
   const createFunctionalityMutation = useMutation({
     mutationFn: api.createFunctionality,
-     onSuccess: () => {
-    
+     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["functionalities", data.submodule] });
     },
   });
 
@@ -74,5 +74,59 @@ export const useSubmodules = (moduleId: number | null, search: string = "") => {
     updateSubmoduleMutation,
     deactivateSubmoduleMutation,
     createFunctionalityMutation
+  };
+};
+
+
+
+// == NEW HOOK FOR FUNCTIONALITIES ==
+export const useFunctionalities = (submoduleId: number | null) => {
+  const queryClient = useQueryClient();
+
+  const functionalitiesQuery = useQuery({
+    queryKey: ["functionalities", submoduleId],
+    queryFn: () => api.getFunctionalities(submoduleId!),
+    enabled: !!submoduleId, // Only run when a submodule ID is provided
+  });
+
+  const updateFunctionalityMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: Parameters<typeof api.updateFunctionality>[1] }) =>
+      api.updateFunctionality(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["functionalities", submoduleId] }),
+  });
+
+  const deactivateFunctionalityMutation = useMutation({
+    mutationFn: api.deactivateFunctionality,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["functionalities", submoduleId] }),
+  });
+
+  return {
+    functionalitiesQuery,
+    updateFunctionalityMutation,
+    deactivateFunctionalityMutation,
+  };
+};
+
+// == HOOK TO FETCH ALL ENTITIES WITHOUT FILTERS ==
+export const useEntities = () => {
+  const modulesQuery = useQuery({
+    queryKey: ["allModules"],
+    queryFn: api.getAllModules,
+  });
+
+  const submodulesQuery = useQuery({
+    queryKey: ["allSubmodules"],
+    queryFn: api.getAllSubmodules,
+  });
+
+  const functionalitiesQuery = useQuery({
+    queryKey: ["allFunctionalities"],
+    queryFn: api.getAllFunctionalities,
+  });
+
+  return {
+    modulesQuery,
+    submodulesQuery,
+    functionalitiesQuery,
   };
 };

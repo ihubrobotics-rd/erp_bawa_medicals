@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { categories } from "@/data/catagories"
 import { useRouter } from "next/navigation";
+import { ModeToggle } from "../ui/ModeToggle"
 
 
 const cities = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad"];
@@ -87,6 +88,7 @@ export function MedicalHeader() {
 
         {/* Cart */}
         <div className="flex items-center gap-4">
+          <ModeToggle  />
           <Button variant="ghost" size="sm" onClick={handleLogin}>Login</Button>
           <Button variant="ghost" size="icon" className="relative">
             <ShoppingCart className="w-5 h-5" />

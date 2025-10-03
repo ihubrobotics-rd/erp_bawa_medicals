@@ -48,7 +48,6 @@ export default function LoginPage() {
       setError("");
       const user = await login(data.username, data.password); // ✅ Pass both
 
-      // ✅ Role-based navigation
       // Use replace so user can't go back to login via browser back
       switch (user.role_name) {
         case "Super admin":
@@ -84,10 +83,9 @@ export default function LoginPage() {
         try {
           await refreshAccessToken();
         } catch (e) {
-          return; // failed to refresh -> stay on login
+          return; 
         }
       }
-
       // If refreshed/valid, redirect based on stored role
       if (!mounted) return;
       const role = getRoleName();
