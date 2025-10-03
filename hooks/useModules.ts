@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api/modules";
 
 // == HOOK FOR MODULES ==
+
 export const useModules = (search: string = "") => {
   const queryClient = useQueryClient();
 
@@ -17,8 +18,13 @@ export const useModules = (search: string = "") => {
   });
 
   const updateModuleMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: { name: string; description: string } }) =>
-      api.updateModule(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: { name: string; description: string };
+    }) => api.updateModule(id, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["modules"] }),
   });
 
@@ -36,35 +42,45 @@ export const useModules = (search: string = "") => {
 };
 
 // == HOOK FOR SUBMODULES & FUNCTIONALITIES ==
+// ... (No changes needed here)
 export const useSubmodules = (moduleId: number | null, search: string = "") => {
   const queryClient = useQueryClient();
 
   const submodulesQuery = useQuery({
     queryKey: ["submodules", moduleId, search],
     queryFn: () => api.getSubmodules({ module: moduleId!, search }),
-    enabled: !!moduleId, // Only run query if a module is selected
+    enabled: !!moduleId,
   });
 
   const createSubmoduleMutation = useMutation({
     mutationFn: api.createSubmodule,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["submodules", moduleId] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["submodules", moduleId] }),
   });
 
   const updateSubmoduleMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: { name: string; description: string; module: number } }) =>
-      api.updateSubmodule(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["submodules", moduleId] }),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: { name: string; description: string; module: number };
+    }) => api.updateSubmodule(id, payload),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["submodules", moduleId] }),
   });
 
   const deactivateSubmoduleMutation = useMutation({
     mutationFn: api.deactivateSubmodule,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["submodules", moduleId] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["submodules", moduleId] }),
   });
-  
   const createFunctionalityMutation = useMutation({
     mutationFn: api.createFunctionality,
-     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["functionalities", data.submodule] });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["functionalities", data.submodule],
+      });
     },
   });
 
@@ -73,31 +89,47 @@ export const useSubmodules = (moduleId: number | null, search: string = "") => {
     createSubmoduleMutation,
     updateSubmoduleMutation,
     deactivateSubmoduleMutation,
-    createFunctionalityMutation
+    createFunctionalityMutation,
   };
 };
 
-
-
 // == NEW HOOK FOR FUNCTIONALITIES ==
-export const useFunctionalities = (submoduleId: number | null) => {
+// ✨ --- CHANGED: Updated hook to handle search functionality ---
+export const useFunctionalities = (
+  submoduleId: number | null,
+  search: string = ""
+) => {
   const queryClient = useQueryClient();
 
   const functionalitiesQuery = useQuery({
-    queryKey: ["functionalities", submoduleId],
-    queryFn: () => api.getFunctionalities(submoduleId!),
-    enabled: !!submoduleId, // Only run when a submodule ID is provided
+    // Add search to the queryKey to refetch when it changes
+    queryKey: ["functionalities", submoduleId, search],
+    // Pass the submodule ID and search term to the API call
+    queryFn: () => api.getFunctionalities({ submodule: submoduleId!, search }),
+    enabled: !!submoduleId,
   });
 
   const updateFunctionalityMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: Parameters<typeof api.updateFunctionality>[1] }) =>
-      api.updateFunctionality(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["functionalities", submoduleId] }),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: Parameters<typeof api.updateFunctionality>[1];
+    }) => api.updateFunctionality(id, payload),
+    // Invalidate based on submoduleId to refresh the list after an update
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["functionalities", submoduleId],
+      }),
   });
 
   const deactivateFunctionalityMutation = useMutation({
     mutationFn: api.deactivateFunctionality,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["functionalities", submoduleId] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["functionalities", submoduleId],
+      }),
   });
 
   return {

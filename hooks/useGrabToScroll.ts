@@ -39,7 +39,7 @@ export function useGrabToScroll(ref: React.RefObject<HTMLElement>) {
 
     e.preventDefault();
     const x = e.pageX - element.offsetLeft;
-    const walk = (x - startX.current) * 2; // The multiplier makes scrolling faster
+    const walk = (x - startX.current) * 1; 
     element.scrollLeft = scrollLeft.current - walk;
   };
 
