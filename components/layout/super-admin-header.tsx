@@ -22,6 +22,18 @@ import {
 import { useGrabToScroll } from "@/hooks/useGrabToScroll";
 import { useHoverCapability } from "@/hooks/useHoverCapability";
 
+// Skeleton component for loading state
+const NavSkeleton = () => (
+  <nav className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar">
+    {[1, 2, 3, 4, 5,7,8,9,10,11,12,13,14,15,16].map((i) => (
+      <div
+        key={i}
+        className="h-9 w-24 bg-muted animate-pulse rounded-full shrink-0 "
+      />
+    ))}
+  </nav>
+);
+
 export function SuperAdminHeader() {
   const router = useRouter();
   const { data, isLoading } = usePrivileges();
@@ -76,15 +88,12 @@ export function SuperAdminHeader() {
     router.push("/login");
   };
 
-  if (isLoading) return <div>Loading...</div>;
-
   const allModules = data?.modules?.results || [];
   const permittedSubmodules = data?.submodules?.results || [];
   const functionalities = data?.functionalities?.results || [];
   const activeModuleNames = new Set(permittedSubmodules.map(sub => sub.module_name));
 
-  // --- REUSABLE COMPONENT FOR DROPDOWN CONTENT ---
-  // This avoids code duplication and ensures content is always present.
+  
   const MenuContent = ({ module }: { module: typeof allModules[0] }) => (
     <>
       {permittedSubmodules
@@ -118,7 +127,7 @@ export function SuperAdminHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border dark:bg-slate-950 bg-white">
-      {/* Top Bar - No Changes */}
+      {/* Top Bar */}
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <Link href="/admin" className="flex items-center gap-2 shrink-0">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -134,45 +143,74 @@ export function SuperAdminHeader() {
         <div className="flex items-center gap-3">
           <ModeToggle />
           <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button variant="ghost" className="flex items-center gap-2"><User className="w-4 h-4" /> <span className="hidden md:inline">{roleName ?? "Loading..."}</span></Button></DropdownMenuTrigger>
-            <DropdownMenuContent align="end"><DropdownMenuItem onClick={handleLogout}><LogOut className="w-4 h-4 mr-2" /> Logout</DropdownMenuItem></DropdownMenuContent>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2">
+                <User className="w-4 h-4" /> 
+                <span className="hidden md:inline">
+                  {roleName ?? <span className="w-16 h-4 bg-muted animate-pulse rounded inline-block" />}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" /> Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
       {/* Second Navbar (Mega Menu) */}
       <div className="border-t border-border">
-        <div className={`scroll-fade-container ${showLeftFade ? "show-left-fade" : ""} ${showRightFade ? "show-right-fade" : ""}`}>
-          <nav ref={navRef} {...grabScrollProps} className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar grabbable">
-            {allModules.map((mod) => {
-              const hasSubmodules = activeModuleNames.has(mod.module_name);
+        {isLoading ? (
+          <NavSkeleton />
+        ) : (
+          <div className={`scroll-fade-container ${showLeftFade ? "show-left-fade" : ""} ${showRightFade ? "show-right-fade" : ""}`}>
+            <nav ref={navRef} {...grabScrollProps} className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar grabbable">
+             {allModules.map((mod) => {
+                const hasSubmodules = activeModuleNames.has(mod.module_name);
 
-              if (!hasSubmodules) {
-                return <Button key={mod.id} variant="ghost" disabled className="text-sm font-medium shrink-0 opacity-75 cursor-default">{mod.module_name}</Button>;
-              }
+                if (!hasSubmodules) {
+                  return (
+                    <Link key={mod.id} href={`/${mod.module_name.toLowerCase()}`}>
+                      <Button variant="ghost" className="text-sm font-medium shrink-0 hover:text-orange-600">
+                        {mod.module_name}
+                      </Button>
+                    </Link>
+                  );
+                }
 
-              return isHoverCapable ? (
-                // --- DESKTOP: HOVER-ENABLED POPOVER ---
-                <div key={mod.id} onMouseEnter={() => handleMouseEnter(mod.module_name)} onMouseLeave={handleMouseLeave}>
-                  <Popover open={hoveredCategory === mod.module_name} onOpenChange={(open) => !open && setHoveredCategory(null)}>
-                    <PopoverTrigger asChild><Button variant="ghost" className="flex items-center gap-1 text-sm font-medium shrink-0">{mod.module_name}<ChevronDown className="w-3 h-3" /></Button></PopoverTrigger>
-                    <PopoverContent className="w-[500px] p-6 grid grid-cols-2 gap-4">
+                return isHoverCapable ? (
+                  <div key={mod.id} onMouseEnter={() => handleMouseEnter(mod.module_name)} onMouseLeave={handleMouseLeave}>
+                    <Popover open={hoveredCategory === mod.module_name} onOpenChange={(open) => !open && setHoveredCategory(null)}>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" className="flex items-center gap-1 text-sm font-medium shrink-0">
+                          {mod.module_name}
+                          <ChevronDown className="w-3 h-3" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[500px] p-6 grid grid-cols-2 gap-4">
+                        <MenuContent module={mod} />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                ) : (
+                  <Popover key={mod.id}>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" className="flex items-center gap-1 text-sm font-medium shrink-0">
+                        {mod.module_name}
+                        <ChevronDown className="w-3 h-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-screen max-w-sm p-6 grid grid-cols-2 gap-4">
                       <MenuContent module={mod} />
                     </PopoverContent>
                   </Popover>
-                </div>
-              ) : (
-                // --- MOBILE: CLICK-ENABLED POPOVER ---
-                <Popover key={mod.id}>
-                  <PopoverTrigger asChild><Button variant="ghost" className="flex items-center gap-1 text-sm font-medium shrink-0">{mod.module_name}<ChevronDown className="w-3 h-3" /></Button></PopoverTrigger>
-                  <PopoverContent className="w-screen max-w-sm p-6 grid grid-cols-2 gap-4">
-                    <MenuContent module={mod} />
-                  </PopoverContent>
-                </Popover>
-              );
-            })}
-          </nav>
-        </div>
+                );
+              })}
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

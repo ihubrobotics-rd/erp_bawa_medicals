@@ -8,6 +8,8 @@ import { QueryProvider } from "@/providers/query-provider";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider"
+import { PrivilegeProvider } from '@/providers/PrivilegeProvider'; // Import the new provider
+
 
 
 export const metadata: Metadata = {
@@ -33,7 +35,11 @@ export default function RootLayout({
         <Toaster />
 
         <Suspense fallback={<div>Loading...</div>}>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <PrivilegeProvider>
+            {children}
+            </PrivilegeProvider>
+            </QueryProvider>
         </Suspense>
         <Analytics />
         </ThemeProvider>
