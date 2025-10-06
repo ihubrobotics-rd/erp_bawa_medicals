@@ -175,7 +175,27 @@ export const isTokenExpired = (token?: string | null) => {
   }
 };
 
-// Refresh access token using the refresh token. Returns new access token string or throws.
+
+// export const refreshAccessToken = async (): Promise<string> => {
+//   const refresh = getRefreshToken();
+//   if (!refresh) throw new Error("No refresh token available");
+
+//   const { data } = await axios.post(
+//     `${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh/`,
+//     { refresh }
+//   );
+
+//   const newAccess = data.access ?? data.data?.access;
+//   if (!newAccess)
+//     throw new Error("Refresh endpoint did not return access token");
+
+//   // Preserve existing refresh token if backend doesn't return a new one
+//   setTokens(newAccess, refresh);
+//   return newAccess;
+// };
+
+
+
 export const refreshAccessToken = async (): Promise<string> => {
   const refresh = getRefreshToken();
   if (!refresh) throw new Error("No refresh token available");
@@ -186,10 +206,8 @@ export const refreshAccessToken = async (): Promise<string> => {
   );
 
   const newAccess = data.access ?? data.data?.access;
-  if (!newAccess)
-    throw new Error("Refresh endpoint did not return access token");
+  const newRefresh = data.refresh ?? refresh; 
+  setTokens(newAccess, newRefresh);
 
-  // Preserve existing refresh token if backend doesn't return a new one
-  setTokens(newAccess, refresh);
   return newAccess;
 };

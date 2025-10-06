@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { clearTokens, loadTokens } from "@/lib/api/auth";
 import { ModeToggle } from "../ui/ModeToggle";
-import { usePrivileges } from "@/hooks/usePrivilegesLoad";
+import { usePrivilegeContext } from "@/providers/PrivilegeProvider";
 import {
   Popover,
   PopoverContent,
@@ -22,28 +22,39 @@ import {
 import { useGrabToScroll } from "@/hooks/useGrabToScroll";
 import { useHoverCapability } from "@/hooks/useHoverCapability";
 
-// Skeleton component for loading state
 const NavSkeleton = () => (
-  <nav className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar">
-    {[1, 2, 3, 4, 5,7,8,9,10,11,12,13,14,15,16].map((i) => (
-      <div
-        key={i}
-        className="h-9 w-24 bg-muted animate-pulse rounded-full shrink-0 "
-      />
-    ))}
-  </nav>
-);
+    <nav className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar">
+      {[...Array(16)].map((_, i) => (
+        <div key={i} className="h-9 w-24 bg-muted animate-pulse rounded-full shrink-0"/>
+      ))}
+    </nav>
+  );
+
+// Simplified MenuContent to just render submodules
+const MenuContent = ({ module }: { module: any }) => (
+    <>
+      {module.submodules.map((sub: any) => (
+        <div key={sub.submoduleId}>
+          <Link
+            href={`/manage/${sub.submoduleId}`} // Correct ID-based route
+            className="font-semibold hover:text-primary block"
+          >
+            {sub.name}
+          </Link>
+        </div>
+      ))}
+    </>
+  );
 
 export function SuperAdminHeader() {
   const router = useRouter();
-  const { data, isLoading } = usePrivileges();
+  const { navigationTree, isLoading } = usePrivilegeContext();
   const [roleName, setRoleName] = useState<string | null>(null);
 
   const navRef = useRef<HTMLElement>(null);
   const grabScrollProps = useGrabToScroll(navRef);
   const isHoverCapable = useHoverCapability();
 
-  // State and handlers for HOVER devices
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -55,26 +66,25 @@ export function SuperAdminHeader() {
     timerRef.current = setTimeout(() => setHoveredCategory(null), 200);
   };
 
-  // Scroll fade logic
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(false);
+  
   useEffect(() => {
     const navElement = navRef.current;
+    if (!navElement) return;
     const checkScroll = () => {
-      if (navElement) {
         const { scrollLeft, scrollWidth, clientWidth } = navElement;
         setShowLeftFade(scrollLeft > 1);
         setShowRightFade(scrollLeft < scrollWidth - clientWidth - 1);
-      }
     };
     checkScroll();
+    navElement.addEventListener("scroll", checkScroll);
     window.addEventListener("resize", checkScroll);
-    if (navElement) navElement.addEventListener("scroll", checkScroll);
     return () => {
+      navElement.removeEventListener("scroll", checkScroll);
       window.removeEventListener("resize", checkScroll);
-      if (navElement) navElement.removeEventListener("scroll", checkScroll);
     };
-  }, [data, isLoading]);
+  }, [navigationTree, isLoading]); 
 
   useEffect(() => {
     loadTokens();
@@ -88,75 +98,38 @@ export function SuperAdminHeader() {
     router.push("/login");
   };
 
-  const allModules = data?.modules?.results || [];
-  const permittedSubmodules = data?.submodules?.results || [];
-  const functionalities = data?.functionalities?.results || [];
-  const activeModuleNames = new Set(permittedSubmodules.map(sub => sub.module_name));
-
-  
-  const MenuContent = ({ module }: { module: typeof allModules[0] }) => (
-    <>
-      {permittedSubmodules
-        .filter((sub) => sub.module_name === module.module_name)
-        .map((sub) => (
-          <div key={sub.id} className="space-y-1">
-            <Link
-              href={`/${module.module_name.toLowerCase()}/${sub.submodule_name.toLowerCase()}`}
-              className="font-semibold hover:text-primary block"
-            >
-              {sub.submodule_name}
-            </Link>
-            <ul className="pl-2 space-y-1">
-              {functionalities
-                .filter((fn) => fn.submodule_name === sub.submodule_name)
-                .map((fn) => (
-                  <li key={fn.id}>
-                    <Link
-                      href={`/${module.module_name.toLowerCase()}/${sub.submodule_name.toLowerCase()}/${fn.functionality_name.toLowerCase()}`}
-                      className="hover:text-primary text-sm block"
-                    >
-                      {fn.functionality_name}
-                    </Link>
-                  </li>
-                ))}
-            </ul>
-          </div>
-        ))}
-    </>
-  );
-
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border dark:bg-slate-950 bg-white">
-      {/* Top Bar */}
+      {/* Top Bar (no changes needed here) */}
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <Link href="/admin" className="flex items-center gap-2 shrink-0">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">M</span>
-          </div>
-          <div className="leading-tight">
-            <span className="text-xl font-bold text-primary">MediCare</span>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Shield className="w-3 h-3" /> Admin Portal
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">M</span>
             </div>
-          </div>
+            <div className="leading-tight">
+                <span className="text-xl font-bold text-primary">MediCare</span>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Shield className="w-3 h-3" /> Admin Portal
+                </div>
+            </div>
         </Link>
         <div className="flex items-center gap-3">
-          <ModeToggle />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
-                <User className="w-4 h-4" /> 
-                <span className="hidden md:inline">
-                  {roleName ?? <span className="w-16 h-4 bg-muted animate-pulse rounded inline-block" />}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" /> Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <ModeToggle />
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2">
+                        <User className="w-4 h-4" /> 
+                        <span className="hidden md:inline">
+                            {roleName ?? <span className="w-16 h-4 bg-muted animate-pulse rounded inline-block" />}
+                        </span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="w-4 h-4 mr-2" /> Logout
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
       </div>
 
@@ -167,46 +140,52 @@ export function SuperAdminHeader() {
         ) : (
           <div className={`scroll-fade-container ${showLeftFade ? "show-left-fade" : ""} ${showRightFade ? "show-right-fade" : ""}`}>
             <nav ref={navRef} {...grabScrollProps} className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar grabbable">
-             {allModules.map((mod) => {
-                const hasSubmodules = activeModuleNames.has(mod.module_name);
+              
+              {navigationTree && Array.from(navigationTree.values()).map((module) => {
 
-                if (!hasSubmodules) {
+                // ---- THE NEW CONDITIONAL RENDERING LOGIC ----
+                if (module.type === 'link') {
+                  // If it's a simple link, render a Button wrapped in a Link
                   return (
-                    <Link key={mod.id} href={`/${mod.module_name.toLowerCase()}`}>
+                    <Link key={module.name} href={`/${module.name.toLowerCase().replace(/[\s/]+/g, '-')}`}>
                       <Button variant="ghost" className="text-sm font-medium shrink-0 hover:text-orange-600">
-                        {mod.module_name}
+                        {module.name}
                       </Button>
                     </Link>
                   );
                 }
 
-                return isHoverCapable ? (
-                  <div key={mod.id} onMouseEnter={() => handleMouseEnter(mod.module_name)} onMouseLeave={handleMouseLeave}>
-                    <Popover open={hoveredCategory === mod.module_name} onOpenChange={(open) => !open && setHoveredCategory(null)}>
+                // If it's a dropdown, render the Popover
+                if (module.type === 'dropdown') {
+                  return isHoverCapable ? (
+                    <div key={module.name} onMouseEnter={() => handleMouseEnter(module.name)} onMouseLeave={handleMouseLeave}>
+                      <Popover open={hoveredCategory === module.name} onOpenChange={(open) => !open && setHoveredCategory(null)}>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" className="flex items-center gap-1 text-sm font-medium shrink-0">
+                            {module.name}
+                            <ChevronDown className="w-3 h-3" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[500px] p-6 grid grid-cols-2 gap-4">
+                          <MenuContent module={module} />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  ) : (
+                    <Popover key={module.name}>
                       <PopoverTrigger asChild>
                         <Button variant="ghost" className="flex items-center gap-1 text-sm font-medium shrink-0">
-                          {mod.module_name}
+                          {module.name}
                           <ChevronDown className="w-3 h-3" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[500px] p-6 grid grid-cols-2 gap-4">
-                        <MenuContent module={mod} />
+                      <PopoverContent className="w-screen max-w-sm p-6 grid grid-cols-2 gap-4">
+                        <MenuContent module={module} />
                       </PopoverContent>
                     </Popover>
-                  </div>
-                ) : (
-                  <Popover key={mod.id}>
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" className="flex items-center gap-1 text-sm font-medium shrink-0">
-                        {mod.module_name}
-                        <ChevronDown className="w-3 h-3" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-screen max-w-sm p-6 grid grid-cols-2 gap-4">
-                      <MenuContent module={mod} />
-                    </PopoverContent>
-                  </Popover>
-                );
+                  );
+                }
+                return null;
               })}
             </nav>
           </div>
