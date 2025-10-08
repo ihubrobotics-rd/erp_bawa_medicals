@@ -29,22 +29,25 @@ import {
 type DynamicTableProps = {
   columns: { accessorKey: string; header: string }[];
   apiGetAllRoute: string;
-  apiDeleteRoute: string;
   privileges: {
     can_edit: boolean;
     can_delete: boolean;
   };
+  onEdit: (row: any) => void; // 1. Add onEdit prop
+  onDelete: (row: any) => void; // 2. Add onDelete prop
 };
 
-export function DynamicTable({ columns, apiGetAllRoute, apiDeleteRoute, privileges }: DynamicTableProps) {
+export function DynamicTable({
+  columns,
+  apiGetAllRoute,
+  privileges,
+  onEdit,
+  onDelete,
+}: DynamicTableProps) {
   const { data: tableData, isLoading, isError } = useQuery({
     queryKey: ['tableData', apiGetAllRoute],
     queryFn: async () => {
-      // The `response` variable here holds the full axios response
       const response = await api.get(apiGetAllRoute);
-      
-      // --- THIS IS THE FIX ---
-      // We now correctly point to the nested results array.
       return response.data.data.results || [];
     },
   });
@@ -64,18 +67,16 @@ export function DynamicTable({ columns, apiGetAllRoute, apiDeleteRoute, privileg
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {privileges.can_edit && (
-              <DropdownMenuItem onClick={() => alert(`Editing item ${row.original.id}`)}>
+              // 3. Connect onEdit handler
+              <DropdownMenuItem onClick={() => onEdit(row.original)}>
                 <Pencil className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
             )}
             {privileges.can_delete && (
               <DropdownMenuItem
                 className="text-red-600"
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to delete this item?')) {
-                    alert(`Deleting item ${row.original.id}`);
-                  }
-                }}
+                // 4. Connect onDelete handler
+                onClick={() => onDelete(row.original)}
               >
                 <Trash2 className="mr-2 h-4 w-4" /> Delete
               </DropdownMenuItem>
@@ -84,7 +85,7 @@ export function DynamicTable({ columns, apiGetAllRoute, apiDeleteRoute, privileg
         </DropdownMenu>
       ),
     },
-  ], [columns, privileges]);
+  ], [columns, privileges, onEdit, onDelete]); // 5. Add handlers to dependency array
 
   const table = useReactTable({
     data: tableData || [],

@@ -1,66 +1,114 @@
-'use client';
+// providers/PrivilegeProvider.tsx
 
+'use client';
 import React, { createContext, useContext, useMemo } from 'react';
 import { usePrivileges } from '@/hooks/usePrivilegesLoad'; // Your existing hook
 
-/**
- * Transforms the flat API data into a nested, UI-friendly structure.
- * It now correctly handles modules that are direct links and modules that are dropdowns.
- */
-const buildNavigationTree = (data: any) => {
+// --- TYPE DEFINITIONS for clarity ---
+type Functionality = {
+  id: number;
+  functionalityId: number;
+  name: string;
+  parentSubmoduleId: number; // The ID of the submodule page to link to
+  type: 'functionality';
+};
+
+type Submodule = {
+  id: number;
+  submoduleId: number;
+  name: string;
+  functionalities: Functionality[];
+  type: 'submodule';
+};
+
+type NavigationNode = {
+  name: string;
+  type: 'dropdown' | 'link';
+  submodules: Submodule[];
+};
+
+// --- THE MODIFIED buildNavigationTree FUNCTION ---
+const buildNavigationTree = (data: any): Map<string, NavigationNode> => {
   if (!data || !data.modules || !data.submodules) {
     return new Map();
   }
 
-  // The new, more flexible structure for our navigation map
-  const navigationTree = new Map<string, {
-    name: string;
-    type: 'dropdown' | 'link'; // Identifies the module type
-    submodules: any[];
-  }>();
+  const navigationTree = new Map<string, NavigationNode>();
 
-  // 1. Group all viewable submodules by their parent module name for efficient lookup.
-  const submodulesByModule = new Map<string, any[]>();
-  data.submodules.results.forEach((sub: any) => {
-    if (sub.can_view) {
-      if (!submodulesByModule.has(sub.module_name)) {
-        submodulesByModule.set(sub.module_name, []);
+  // 1. Create a lookup map for submodule names to their IDs for efficient linking.
+  const submoduleNameToIdMap = new Map<string, number>();
+  if (data.submodules && data.submodules.results) {
+    data.submodules.results.forEach((sub: any) => {
+        submoduleNameToIdMap.set(sub.submodule_name, sub.submodule);
+    });
+  }
+
+  // 2. Group all viewable functionalities by their parent submodule name.
+  const functionalitiesBySubmodule = new Map<string, Functionality[]>();
+  if (data.functionalities && data.functionalities.results) {
+    data.functionalities.results.forEach((func: any) => {
+      if (func.can_view) {
+        if (!functionalitiesBySubmodule.has(func.submodule_name)) {
+          functionalitiesBySubmodule.set(func.submodule_name, []);
+        }
+        // Find the parent submodule's ID for linking
+        const parentSubmoduleId = submoduleNameToIdMap.get(func.submodule_name);
+        if (parentSubmoduleId) {
+            functionalitiesBySubmodule.get(func.submodule_name)?.push({
+                id: func.id,
+                functionalityId: func.functionality,
+                name: func.functionality_name,
+                parentSubmoduleId: parentSubmoduleId, // Crucial for linking
+                type: 'functionality',
+            });
+        }
       }
-      submodulesByModule.get(sub.module_name)?.push({
-        id: sub.id,
-        submoduleId: sub.submodule, // The crucial ID for our dynamic route
-        name: sub.submodule_name,
+    });
+  }
+
+  // 3. Group all viewable submodules by their parent module name, attaching their functionalities.
+  const submodulesByModule = new Map<string, Submodule[]>();
+  if (data.submodules && data.submodules.results) {
+      data.submodules.results.forEach((sub: any) => {
+        if (sub.can_view) {
+          if (!submodulesByModule.has(sub.module_name)) {
+            submodulesByModule.set(sub.module_name, []);
+          }
+          submodulesByModule.get(sub.module_name)?.push({
+            id: sub.id,
+            submoduleId: sub.submodule,
+            name: sub.submodule_name,
+            functionalities: functionalitiesBySubmodule.get(sub.submodule_name) || [],
+            type: 'submodule',
+          });
+        }
       });
-    }
-  });
+  }
 
-  // 2. Use a Set to prevent processing duplicate module names from the API response.
+
+  // 4. Build the final navigation tree using the modules as the top level.
   const processedModules = new Set<string>();
-
   data.modules.results.forEach((mod: any) => {
     if (!mod.can_view || processedModules.has(mod.module_name)) {
-      return; // Skip if user can't view or we've already handled this module name
+      return;
     }
 
     const submodulesForThisModule = submodulesByModule.get(mod.module_name) || [];
 
     if (submodulesForThisModule.length > 0) {
-      // 3. If submodules exist, this is a 'dropdown' type.
       navigationTree.set(mod.module_name, {
         name: mod.module_name,
         type: 'dropdown',
         submodules: submodulesForThisModule,
       });
     } else {
-      // 4. If no submodules exist, this is a 'link' type.
       navigationTree.set(mod.module_name, {
         name: mod.module_name,
         type: 'link',
-        submodules: [], // It has no submodules
+        submodules: [],
       });
     }
     
-    // Mark as processed to handle duplicates
     processedModules.add(mod.module_name);
   });
 
@@ -68,8 +116,7 @@ const buildNavigationTree = (data: any) => {
 };
 
 
-// --- The rest of the provider remains the same ---
-
+// --- CONTEXT AND PROVIDER (No changes needed here) ---
 const PrivilegeContext = createContext<any>(null);
 
 export const PrivilegeProvider = ({ children }: { children: React.ReactNode }) => {
@@ -81,7 +128,7 @@ export const PrivilegeProvider = ({ children }: { children: React.ReactNode }) =
 
   const value = {
     isLoading,
-    privilegesData, // You can still pass the raw data if needed elsewhere
+    privilegesData,
     navigationTree,
   };
   

@@ -1,42 +1,67 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form'; // 1. Import Controller
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-
 import api from '@/lib/api/auth';
 import { generateZodSchema } from '@/lib/zod-schema-generator';
+
+// 2. Import the new UI components
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { DynamicDropdown, StaticDropdown } from './DropdownFields';
 
 type DynamicFormProps = {
-  schema: any[]; // This is the `function_definitions` array
+  schema: any[];
   apiCreateRoute: string;
-  apiGetAllRoute: string; // Needed to invalidate query cache on success
-  onClose: () => void; // Function to close the modal
+  apiUpdateRoute: string;
+  apiGetAllRoute: string;
+  initialData?: any | null;
+  onClose: () => void;
 };
 
-export function DynamicForm({ schema, apiCreateRoute, apiGetAllRoute, onClose }: DynamicFormProps) {
+export function DynamicForm({
+  schema,
+  apiCreateRoute,
+  apiUpdateRoute,
+  apiGetAllRoute,
+  initialData = null,
+  onClose,
+}: DynamicFormProps) {
   const queryClient = useQueryClient();
+  const isEditMode = !!initialData;
 
-  // 1. Generate the Zod schema dynamically
   const formSchema = generateZodSchema(schema);
-  
-  // 2. Setup React Hook Form
-  const { register, handleSubmit, formState: { errors } } = useForm({
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    reset,
+    control, // 3. Get 'control' from useForm
+  } = useForm({
     resolver: zodResolver(formSchema),
+    defaultValues: initialData || {},
   });
 
-  // 3. Setup the mutation for creating a new item
+  useEffect(() => {
+    if (isEditMode) {
+      reset(initialData);
+    }
+  }, [initialData, reset, isEditMode]);
+
   const createMutation = useMutation({
     mutationFn: (newData: any) => api.post(apiCreateRoute, newData),
     onSuccess: () => {
       toast.success('Item created successfully!');
-      // When creation is successful, refetch the table data to show the new item
       queryClient.invalidateQueries({ queryKey: ['tableData', apiGetAllRoute] });
-      onClose(); // Close the form/modal
+      onClose();
     },
     onError: (error) => {
       toast.error('Failed to create item.');
@@ -44,35 +69,125 @@ export function DynamicForm({ schema, apiCreateRoute, apiGetAllRoute, onClose }:
     },
   });
 
-  // 4. The function that is called on form submission
+  const updateMutation = useMutation({
+    mutationFn: (updatedData: any) => {
+      const updateUrl = apiUpdateRoute.replace('<int:pk>', initialData.id);
+      return api.put(updateUrl, updatedData);
+    },
+    onSuccess: () => {
+      toast.success('Item updated successfully!');
+      queryClient.invalidateQueries({ queryKey: ['tableData', apiGetAllRoute] });
+      onClose();
+    },
+    onError: (error) => {
+      toast.error('Failed to update item.');
+      console.error(error);
+    },
+  });
+
   const onSubmit = (data: any) => {
-    createMutation.mutate(data);
+    Object.keys(data).forEach((key) => {
+      if (data[key] === '') delete data[key];
+    });
+
+    if (isEditMode) {
+      updateMutation.mutate(data);
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
-  // 5. Render the form fields based on the schema
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {schema.map((field) => (
         <div key={field.id} className="grid w-full items-center gap-1.5">
-          <Label htmlFor={field.input_name} className='capitalize'>
+          <Label htmlFor={field.input_name} className="capitalize">
             {field.label} {field.is_required && <span className="text-red-500">*</span>}
           </Label>
-          <Input
-            id={field.input_name}
-            type={field.input_type}
-            placeholder={field.placeholder}
-            {...register(field.input_name)}
-          />
+
+          {/* --- 4. START: UPDATED COMPONENT RENDERING LOGIC --- */}
+          {(() => {
+            if (field.input_type === 'checkbox') {
+              return (
+                <Controller
+                  control={control}
+                  name={field.input_name}
+                  render={({ field: controllerField }) => (
+                    <div className="flex items-center pt-2">
+                       <Checkbox
+                          id={field.input_name}
+                          checked={!!controllerField.value} // Use !! to ensure it's a boolean
+                          onCheckedChange={controllerField.onChange}
+                       />
+                    </div>
+                  )}
+                />
+              );
+            }
+
+            if (field.input_type === 'radio') {
+              // This assumes your radio options are in `field.values`
+              // e.g., field.values = [{ label: 'Option 1', value: 'opt1' }, ...]
+              return (
+                <Controller
+                  control={control}
+                  name={field.input_name}
+                  render={({ field: controllerField }) => (
+                    <RadioGroup
+                      onValueChange={controllerField.onChange}
+                      defaultValue={controllerField.value}
+                      className="flex space-x-4 pt-2"
+                    >
+                      {(field.values || []).map((option: any) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <RadioGroupItem value={option.value} id={`${field.input_name}-${option.value}`} />
+                          <Label htmlFor={`${field.input_name}-${option.value}`}>{option.label}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  )}
+                />
+              );
+            }
+            
+            if (field.options_api) {
+              return <DynamicDropdown field={field} setValue={setValue} />;
+            }
+            
+            // Render dropdown if `values` exist, but it's not a radio group
+            if (field.values && field.input_type !== 'radio') {
+              return <StaticDropdown field={field} setValue={setValue} />;
+            }
+
+            // Fallback to a standard text input
+            return (
+              <Input
+                id={field.input_name}
+                type={field.input_type || 'text'}
+                placeholder={field.placeholder}
+                {...register(field.input_name)}
+              />
+            );
+          })()}
+          {/* --- END: UPDATED COMPONENT RENDERING LOGIC --- */}
+          
           {errors[field.input_name] && (
-            <p className="text-sm text-red-500">{errors[field.input_name]?.message as string}</p>
+            <p className="text-sm text-red-500">
+              {errors[field.input_name]?.message as string}
+            </p>
           )}
         </div>
       ))}
+
       <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" disabled={createMutation.isPending}>
-            {createMutation.isPending ? 'Saving...' : 'Save'}
-          </Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? 'Saving...' : (isEditMode ? 'Update Changes' : 'Save')}
+        </Button>
       </div>
     </form>
   );
