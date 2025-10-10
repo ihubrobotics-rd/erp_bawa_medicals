@@ -30,6 +30,34 @@ export const setTokens = (
   if (user?.role_name) localStorage.setItem("role_name", user.role_name);
   if (user?.is_active !== undefined)
     localStorage.setItem("is_active", String(user.is_active));
+  // update in-memory copies immediately
+  syncUserIntoMemory(user);
+  // notify the app that auth state changed so listeners (e.g. privilege loader)
+  // can re-read role/localStorage and re-run queries.
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new Event("auth:changed"));
+    } catch (e) {
+      // some environments may restrict Event constructor; fallback to CustomEvent
+      window.dispatchEvent(new CustomEvent("auth:changed"));
+    }
+  }
+};
+
+// Keep module-level variables in sync so getters that read the in-memory
+// values immediately after setTokens() will see the updated data without
+// needing a round-trip to localStorage.
+// (This prevents a race where code reads getRoleId() immediately after
+// login before the next render.)
+const syncUserIntoMemory = (user?: {
+  role?: number;
+  role_name?: string;
+  is_active?: boolean;
+}) => {
+  if (!user) return;
+  if (user.role !== undefined) roleId = user.role;
+  if (user.role_name !== undefined) roleName = user.role_name;
+  if (user.is_active !== undefined) isActive = user.is_active;
 };
 
 export const clearTokens = () => {
@@ -175,7 +203,6 @@ export const isTokenExpired = (token?: string | null) => {
   }
 };
 
-
 // export const refreshAccessToken = async (): Promise<string> => {
 //   const refresh = getRefreshToken();
 //   if (!refresh) throw new Error("No refresh token available");
@@ -194,8 +221,6 @@ export const isTokenExpired = (token?: string | null) => {
 //   return newAccess;
 // };
 
-
-
 export const refreshAccessToken = async (): Promise<string> => {
   const refresh = getRefreshToken();
   if (!refresh) throw new Error("No refresh token available");
@@ -206,7 +231,7 @@ export const refreshAccessToken = async (): Promise<string> => {
   );
 
   const newAccess = data.access ?? data.data?.access;
-  const newRefresh = data.refresh ?? refresh; 
+  const newRefresh = data.refresh ?? refresh;
   setTokens(newAccess, newRefresh);
 
   return newAccess;

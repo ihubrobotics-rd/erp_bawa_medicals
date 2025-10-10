@@ -14,14 +14,20 @@ type PaginatedResult = {
 // The new fetching function that handles pagination
 const fetchAllPrivileges = async (roleId: string) => {
   // 1. Fetch the first page to get initial data and pagination info
-  const initialResponse = await api.get(`/Privilege/role/privileges/${roleId}/`);
+  const initialResponse = await api.get(
+    `/Privilege/role/privileges/${roleId}/`
+  );
   const firstPageData = initialResponse.data.data;
 
   if (!firstPageData) {
     // Return a default structure if the API response is empty
-    return { modules: { results: [] }, submodules: { results: [] }, functionalities: { results: [] } };
+    return {
+      modules: { results: [] },
+      submodules: { results: [] },
+      functionalities: { results: [] },
+    };
   }
-  
+
   const { modules, submodules, functionalities } = firstPageData;
 
   // 2. Determine the maximum number of pages to fetch
@@ -35,11 +41,13 @@ const fetchAllPrivileges = async (roleId: string) => {
   if (maxTotalPages <= 1) {
     return firstPageData;
   }
-  
+
   // 3. Create promises for all remaining pages
   const pagePromises = [];
   for (let page = 2; page <= maxTotalPages; page++) {
-    pagePromises.push(api.get(`/Privilege/role/privileges/${roleId}/?page=${page}`));
+    pagePromises.push(
+      api.get(`/Privilege/role/privileges/${roleId}/?page=${page}`)
+    );
   }
 
   // 4. Fetch all other pages concurrently
@@ -50,7 +58,7 @@ const fetchAllPrivileges = async (roleId: string) => {
   const allSubmodules = [...(submodules?.results || [])];
   const allFunctionalities = [...(functionalities?.results || [])];
 
-  additionalPageResponses.forEach(response => {
+  additionalPageResponses.forEach((response) => {
     const pageData = response.data.data;
     if (pageData.modules?.results) {
       allModules.push(...pageData.modules.results);
@@ -66,25 +74,70 @@ const fetchAllPrivileges = async (roleId: string) => {
   // 6. Return the final, combined data structure
   // We update count and set total_pages to 1 as we've merged everything.
   return {
-    modules: { ...modules, results: allModules, count: allModules.length, total_pages: 1 },
-    submodules: { ...submodules, results: allSubmodules, count: allSubmodules.length, total_pages: 1 },
-    functionalities: { ...functionalities, results: allFunctionalities, count: allFunctionalities.length, total_pages: 1 },
+    modules: {
+      ...modules,
+      results: allModules,
+      count: allModules.length,
+      total_pages: 1,
+    },
+    submodules: {
+      ...submodules,
+      results: allSubmodules,
+      count: allSubmodules.length,
+      total_pages: 1,
+    },
+    functionalities: {
+      ...functionalities,
+      results: allFunctionalities,
+      count: allFunctionalities.length,
+      total_pages: 1,
+    },
   };
 };
 
+import { useEffect, useState } from "react";
+
 export const usePrivileges = () => {
-  const roleId = getRoleId();
+  // keep a client-side state for the current role so we can react when
+  // setTokens() dispatches an 'auth:changed' event or storage changes.
+  const [currentRoleId, setCurrentRoleId] = useState<number | null>(() =>
+    getRoleId()
+  );
+
+  useEffect(() => {
+    const onAuthChanged = () => {
+      setCurrentRoleId(getRoleId());
+    };
+
+    // Listen to explicit auth changes triggered by setTokens/clearTokens
+    window.addEventListener("auth:changed", onAuthChanged);
+
+    // Also listen for storage events (in case another tab changed auth)
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "role" || e.key === "access" || e.key === "refresh") {
+        setCurrentRoleId(getRoleId());
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("auth:changed", onAuthChanged);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   return useQuery({
-    queryKey: ["privileges", roleId],
+    queryKey: ["privileges", currentRoleId],
     // Use the new comprehensive fetch function
     queryFn: async () => {
-      if (!roleId) throw new Error("No role found in storage");
-      return fetchAllPrivileges(roleId);
+      if (currentRoleId === null || currentRoleId === undefined)
+        throw new Error("No role found in storage");
+      // fetchAllPrivileges expects a string role id (it builds URLs). Convert here.
+      return fetchAllPrivileges(String(currentRoleId));
     },
     // Standard react-query options
     refetchOnWindowFocus: true,
     refetchInterval: 10000,
-    enabled: !!roleId, // Query will only run if roleId exists
+    enabled: !!currentRoleId, // Query will only run if roleId exists
   });
 };

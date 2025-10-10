@@ -8,6 +8,8 @@ import type {
   ConsolidatedRolePrivileges, 
 } from "@/types/privileges";
 
+
+
 // NEW: Get all privileges for a specific role
 export const getPrivilegesForRole = async (
   roleId: number
@@ -52,4 +54,12 @@ export const setFunctionalityPrivilege = async (
     payload
   );
   return data.data as FunctionalityPrivilege;
+};
+
+
+// NEW: Fetch combined schema for a specific submodule
+export const getSubmoduleSchema = async (submoduleId: string) => {
+  if (!submoduleId) return null;
+  const { data } = await api.get(`/Privilege/submodules/combined/?submodule_id=${submoduleId}`);
+  return data.data;
 };

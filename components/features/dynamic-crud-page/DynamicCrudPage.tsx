@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState } from 'react'; // Import useState
+import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
-
-// 1. Import all the necessary AlertDialog components
 import {
   Dialog,
   DialogContent,
@@ -24,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import { DynamicTable } from './DynamicTable';
 import { DynamicForm } from './DynamicForm';
 
@@ -45,8 +42,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   // --- STATE MANAGEMENT ---
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
-
-  // 2. Add state for the delete confirmation dialog
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<any | null>(null);
 
@@ -61,36 +56,39 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     setIsFormOpen(true);
   };
 
-  // 3. Modify the handleDelete function to open the AlertDialog
   const handleDeleteClick = (item: any) => {
-    setItemToDelete(item); // Store the item to be deleted
-    setIsAlertOpen(true);   // Open the confirmation dialog
+    setItemToDelete(item);
+    setIsAlertOpen(true);
   };
 
   // --- MUTATIONS ---
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => {
-      const deleteUrl = apiRoutes.delete.replace('<int:pk>', id);
-      return api.delete(deleteUrl);
+    mutationFn: async (id: number) => {
+      const deleteUrl = apiRoutes.delete.replace('<int:pk>', String(id));
+      const response = await api.delete(deleteUrl);
+      return response.data;
     },
-    onSuccess: () => {
-      toast.success('Item deleted successfully!');
+    onSuccess: (data) => {
+      const message = data?.message || 'Item deleted successfully!';
+    toast.success(message);
       queryClient.invalidateQueries({ queryKey: ['tableData', apiRoutes.get_all] });
-      setItemToDelete(null); // Clean up
+      setItemToDelete(null);
     },
-    onError: (error) => {
-      toast.error('Failed to delete item.');
+    onError: (error: any) => {
+      const message =
+      error?.response?.data?.message ||
+      'Failed to delete item. Please try again.';
+    toast.error(message);
       console.error(error);
-      setItemToDelete(null); // Clean up
+      setItemToDelete(null);
     },
   });
 
-  // 4. This function will be called when the user confirms the deletion in the modal
   const confirmDelete = () => {
     if (itemToDelete) {
       deleteMutation.mutate(itemToDelete.id);
     }
-    setIsAlertOpen(false); // Close the dialog
+    setIsAlertOpen(false);
   };
   
   const isEditMode = !!editingItem;
@@ -109,12 +107,12 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
         apiGetAllRoute={apiRoutes.get_all}
         privileges={privileges}
         onEdit={handleEdit}
-        onDelete={handleDeleteClick} // 5. Pass the new handler to the table
+        onDelete={handleDeleteClick}
       />
       
-      {/* Edit/Add Form Dialog (No changes here) */}
+      {/* Edit/Add Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="capitalize">
               {isEditMode ? `Edit ${pageTitle}` : `Add New ${pageTitle}`}
@@ -125,21 +123,22 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
                 : `Fill out the form below to create a new ${pageTitle}.`}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <DynamicForm
-              key={editingItem ? editingItem.id : 'new'}
-              schema={formSchema}
-              apiCreateRoute={apiRoutes.create}
-              apiUpdateRoute={apiRoutes.update}
-              apiGetAllRoute={apiRoutes.get_all}
-              initialData={editingItem}
-              onClose={() => setIsFormOpen(false)}
-            />
+
+          <div className=" pr-4">
+              <DynamicForm
+                key={editingItem ? editingItem.id : 'new'}
+                schema={formSchema}
+                apiCreateRoute={apiRoutes.create}
+                apiUpdateRoute={apiRoutes.update}
+                apiGetAllRoute={apiRoutes.get_all}
+                initialData={editingItem}
+                onClose={() => setIsFormOpen(false)}
+              />
           </div>
         </DialogContent>
       </Dialog>
       
-      {/* 6. Add the AlertDialog component for delete confirmation */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

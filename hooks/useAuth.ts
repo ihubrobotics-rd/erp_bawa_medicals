@@ -35,6 +35,15 @@ export const useAuth = () => {
       return data.data.user;
     },
     onSuccess: (user) => {
+      // Make sure any components depending on privileges refetch immediately
+      // after login. We use the same query key shape as usePrivileges (role id)
+      // to invalidate and refetch.
+      const roleId = user?.role ?? null;
+      if (roleId !== null && roleId !== undefined) {
+        queryClient.invalidateQueries({ queryKey: ["privileges", roleId] });
+        queryClient.refetchQueries({ queryKey: ["privileges", roleId] });
+      }
+
       toast.success(`Welcome back, ${user.username || "User"}!`, {
         description: "You are now logged in.",
       });
@@ -51,7 +60,8 @@ export const useAuth = () => {
 
   const logout = () => {
     clearTokens();
-    queryClient.removeQueries(["user"]);
+    // remove user query by key
+    queryClient.removeQueries({ queryKey: ["user"] });
     toast.info("Logged Out", {
       description: "You have been successfully logged out.",
     });
@@ -61,6 +71,7 @@ export const useAuth = () => {
     login: (username: string, password: string) =>
       loginMutation.mutateAsync({ username, password }),
     logout,
-    isLoading: loginMutation.isLoading,
+    // expose a consistent isLoading boolean (react-query v5 mutation uses status)
+    isLoading: loginMutation.status === "pending",
   };
 };

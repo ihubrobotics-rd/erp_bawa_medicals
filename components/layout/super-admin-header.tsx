@@ -27,7 +27,10 @@ import { useHoverCapability } from "@/hooks/useHoverCapability";
 const NavSkeleton = () => (
   <nav className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar">
     {[...Array(16)].map((_, i) => (
-      <div key={i} className="h-9 w-24 bg-muted animate-pulse rounded-full shrink-0" />
+      <div
+        key={i}
+        className="h-9 w-24 bg-muted animate-pulse rounded-full shrink-0"
+      />
     ))}
   </nav>
 );
@@ -50,6 +53,8 @@ const MenuContent = ({ module }: { module: any }) => (
 export function SuperAdminHeader() {
   const router = useRouter();
   const { navigationTree, isLoading } = usePrivilegeContext();
+  // navigationTree is a Map<string, NavigationNode> but comes from external
+  // data; cast its iterator results to any to make rendering safe here.
   const [roleName, setRoleName] = useState<string | null>(null);
 
   const navRef = useRef<HTMLElement>(null);
@@ -72,12 +77,11 @@ export function SuperAdminHeader() {
 
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(false);
-  
+
   // --- FIX: Set hasMounted to true only on the client ---
   useEffect(() => {
     setHasMounted(true);
   }, []);
-
 
   useEffect(() => {
     const navElement = navRef.current;
@@ -130,7 +134,9 @@ export function SuperAdminHeader() {
               <Button variant="ghost" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
                 <span className="hidden md:inline">
-                  {roleName ?? <span className="w-16 h-4 bg-muted animate-pulse rounded inline-block" />}
+                  {roleName ?? (
+                    <span className="w-16 h-4 bg-muted animate-pulse rounded inline-block" />
+                  )}
                 </span>
               </Button>
             </DropdownMenuTrigger>
@@ -147,59 +153,92 @@ export function SuperAdminHeader() {
       <div className="border-t border-border">
         {/* --- FIX: Modify the conditional rendering logic --- */}
         {/* Always render the skeleton on the server and on the initial client render */}
-        {(!hasMounted || isLoading) ? (
+        {!hasMounted || isLoading ? (
           <NavSkeleton />
         ) : (
-          <div className={`scroll-fade-container ${showLeftFade ? "show-left-fade" : ""} ${showRightFade ? "show-right-fade" : ""}`}>
-            <nav ref={navRef} {...grabScrollProps} className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar grabbable">
-              {navigationTree && Array.from(navigationTree.values()).map((module) => {
-                if (module.type === 'link') {
-                  return (
-                    <Link key={module.name} href={`/${module.name.toLowerCase().replace(/[\s/]+/g, '-')}`}>
-                      <Button variant="ghost" className="text-sm font-medium shrink-0 hover:text-orange-600">
-                        {module.name}
-                      </Button>
-                    </Link>
-                  );
-                }
+          <div
+            className={`scroll-fade-container ${
+              showLeftFade ? "show-left-fade" : ""
+            } ${showRightFade ? "show-right-fade" : ""}`}
+          >
+            <nav
+              ref={navRef}
+              {...grabScrollProps}
+              className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar grabbable"
+            >
+              {navigationTree &&
+                Array.from(navigationTree.values()).map((m) => {
+                  const module: any = m as any;
+                  if (module.type === "link") {
+                    return (
+                      <Link
+                        key={module.name}
+                        href={`/${module.name
+                          .toLowerCase()
+                          .replace(/[\s/]+/g, "-")}`}
+                      >
+                        <Button
+                          variant="ghost"
+                          className="text-sm font-medium shrink-0 hover:text-orange-600"
+                        >
+                          {module.name}
+                        </Button>
+                      </Link>
+                    );
+                  }
 
-                if (module.type === 'dropdown') {
-                  return isHoverCapable ? (
-                    <div key={module.name} onMouseEnter={() => handleMouseEnter(module.name)} onMouseLeave={handleMouseLeave}>
-                      <Popover open={hoveredCategory === module.name} onOpenChange={(open) => !open && setHoveredCategory(null)}>
+                  if (module.type === "dropdown") {
+                    return isHoverCapable ? (
+                      <div
+                        key={module.name}
+                        onMouseEnter={() => handleMouseEnter(module.name)}
+                        onMouseLeave={handleMouseLeave}
+                      >
+                        <Popover
+                          open={hoveredCategory === module.name}
+                          onOpenChange={(open) =>
+                            !open && setHoveredCategory(null)
+                          }
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="flex items-center gap-1 text-sm font-medium shrink-0"
+                            >
+                              {module.name}
+                              <ChevronDown className="w-3 h-3" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-64 p-2 max-h-[75vh] overflow-y-auto"
+                            align="start"
+                          >
+                            <MenuContent module={module} />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    ) : (
+                      <Popover key={module.name}>
                         <PopoverTrigger asChild>
-                          <Button variant="ghost" className="flex items-center gap-1 text-sm font-medium shrink-0">
+                          <Button
+                            variant="ghost"
+                            className="flex items-center gap-1 text-sm font-medium shrink-0"
+                          >
                             {module.name}
                             <ChevronDown className="w-3 h-3" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent 
+                        <PopoverContent
                           className="w-64 p-2 max-h-[75vh] overflow-y-auto"
                           align="start"
                         >
                           <MenuContent module={module} />
                         </PopoverContent>
                       </Popover>
-                    </div>
-                  ) : (
-                    <Popover key={module.name}>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" className="flex items-center gap-1 text-sm font-medium shrink-0">
-                          {module.name}
-                          <ChevronDown className="w-3 h-3" />
-                        </Button>
-                      </PopoverTrigger>
-                       <PopoverContent 
-                        className="w-64 p-2 max-h-[75vh] overflow-y-auto"
-                        align="start"
-                      >
-                        <MenuContent module={module} />
-                      </PopoverContent>
-                    </Popover>
-                  );
-                }
-                return null;
-              })}
+                    );
+                  }
+                  return null;
+                })}
             </nav>
           </div>
         )}
