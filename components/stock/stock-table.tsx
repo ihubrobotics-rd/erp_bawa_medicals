@@ -66,7 +66,14 @@ export function StockTable({ medicines, onAddStock }: StockTableProps) {
                     <Badge variant={stockStatus.variant}>{stockStatus.status}</Badge>
                   </TableCell>
                   <TableCell>{medicine.batchNumber}</TableCell>
-                  <TableCell>{new Date(medicine.expiryDate).toLocaleDateString()}</TableCell>
+                  {/* FIX: Enforce a consistent date format */}
+                  <TableCell>
+                    {new Date(medicine.expiryDate).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

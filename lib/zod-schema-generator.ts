@@ -1,71 +1,76 @@
 import { z } from "zod";
 
-// This utility function creates a Zod validation schema from your API's form definition
+// Generates Zod schema dynamically based on field definitions
 export const generateZodSchema = (functionDefinitions: any[]) => {
-  const shape: { [key: string]: any } = {};
+  const shape: Record<string, any> = {};
 
-  functionDefinitions.forEach((field) => {
-    let validator: any;
+  functionDefinitions.forEach((field) => {
+    let validator: any;
 
-    switch (field.input_type) {
-      case "number":
-        // `coerce` will convert the string from the input field into a number
-        validator = z.coerce.number({
-          invalid_type_error: `${field.label} must be a number.`,
-        });
-        break;
+    switch (field.input_type) {
+      case "number":
+        validator = z.coerce.number({
+          invalid_type_error: `${field.label} must be a number.`,
+        });
+        break;
 
-      case "email":
-        validator = z.string().email();
-        break;
+      case "email":
+        validator = z.string().email({ message: "Invalid email format" });
+        break;
 
-      case "checkbox":
-        // Checkbox should be a boolean
-        validator = z.boolean();
-        break;
+      case "checkbox":
+        validator = z.boolean();
+        break;
 
-      case "radio":
-        // If radio options are provided, create an enum of allowed values
-        if (Array.isArray(field.values) && field.values.length > 0) {
-          const enumValues = field.values.map((v: any) => String(v.value));
-          // z.enum requires a tuple of string literals at compile time; use z.union as a runtime-friendly alternative
-          validator = z.union(enumValues.map((v: string) => z.literal(v)));
-        } else {
-          // fallback to string
-          validator = z.string();
-        }
-        break;
+      case "radio": {
+        // check if radio field represents a boolean-like field
+        const values = field.values?.map((v: any) => v.value) ?? [];
 
-      default: // 'text', 'select', and others
-        validator = z.string();
-    }
+        const isBooleanField = values.every(
+          (v: any) =>
+            v === true ||
+            v === false ||
+            v === "true" ||
+            v === "false"
+        );
 
-    // Apply required/optional rules depending on the base validator type
-    if (field.is_required) {
-      // For strings, ensure non-empty values
-      if (validator === z.string) {
-        // This branch won't be hit because validator is an instance, so handle via typeof check below
-      }
+        if (isBooleanField) {
+          // accepts string or boolean → outputs boolean
+          validator = z
+            .union([
+              z.boolean(),
+              z.literal("true"),
+              z.literal("false"),
+            ])
+            .transform((val) => val === true || val === "true");
+        } else if (Array.isArray(values) && values.length > 0) {
+          // handle string-based radios
+          validator = z.union(values.map((v: any) => z.literal(String(v))));
+        } else {
+          validator = z.string();
+        }
+        break;
+      }
 
-      // If validator is a Zod string instance, apply min(1)
-      // We detect string validators by checking for ._def.typeName
-      try {
-        const typeName = (validator as any)?._def?.typeName;
-        if (typeName === "ZodString") {
-          validator = (validator as any).min(1, {
-            message: `${field.label} is required.`,
-          });
-        }
-        // For unions (like radio union), we don't need min(1) — presence is enough
-      } catch (e) {
-        // ignore and leave validator as-is
-      }
-    } else {
-      validator = validator.optional();
-    }
+      default:
+        validator = z.string();
+        break;
+    }
 
-    shape[field.input_name] = validator;
-  });
+    // Apply required/optional rule
+    if (field.is_required) {
+      const typeName = (validator as any)?._def?.typeName;
 
-  return z.object(shape);
+      if (typeName === "ZodString") {
+        validator = validator.min(1, { message: `${field.label} is required.` });
+      }
+    } else {
+      // Allow the field to be optional (undefined) AND nullable
+      validator = validator.optional().nullable();
+    }
+
+    shape[field.input_name] = validator;
+  });
+
+  return z.object(shape);
 };

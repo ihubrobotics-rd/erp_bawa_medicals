@@ -1,11 +1,10 @@
 // New components/SuperAdminHeader.tsx
-
 "use client";
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, LogOut, Shield, ChevronDown } from "lucide-react";
+import { User, LogOut, Shield, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,7 +12,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { clearTokens, loadTokens } from "@/lib/api/auth";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"; // <-- IMPORT COLLAPSIBLE
+import { clearTokens, loadTokens, navigateToRoleOrLogin } from "@/lib/api/auth";
 import { ModeToggle } from "../ui/ModeToggle";
 import { usePrivilegeContext } from "@/providers/PrivilegeProvider";
 import {
@@ -23,50 +27,92 @@ import {
 } from "@/components/ui/popover";
 import { useGrabToScroll } from "@/hooks/useGrabToScroll";
 import { useHoverCapability } from "@/hooks/useHoverCapability";
+import { cn } from "@/lib/utils"; // <-- Make sure you have this utility
 
+// ... (NavSkeleton component remains the same) ...
 const NavSkeleton = () => (
-  <nav className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar">
-    {[...Array(16)].map((_, i) => (
-      <div
-        key={i}
-        className="h-9 w-24 bg-muted animate-pulse rounded-full shrink-0"
-      />
-    ))}
-  </nav>
-);
+    <nav className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar">
+      {[...Array(16)].map((_, i) => (
+        <div
+          key={i}
+          className="h-9 w-24 bg-muted animate-pulse rounded-full shrink-0"
+        />
+      ))}
+    </nav>
+  );
 
-// --- UPDATED & RESTYLED MenuContent ---
+
+// --- NEW SUB-COMPONENT to handle nested logic ---
+const SubmoduleMenuItem = ({ sub }: { sub: any }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Case 1: Submodule has functionalities -> render a collapsible dropdown
+  if (sub.functionalities && sub.functionalities.length > 0) {
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="flex items-center justify-between w-full rounded-md p-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none">
+            <span>{sub.name}</span>
+            <ChevronRight
+              className={cn("h-4 w-4 transition-transform", isOpen && "rotate-90")}
+            />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pl-4 pt-1 space-y-1">
+          {sub.functionalities.map((func: any) => (
+            <Link
+              // --- THIS IS THE FIX ---
+              // Use func.id (the unique record ID) instead of func.functionalityId
+              key={func.id} 
+              // The href is still correct, as it needs to link to the functionality page
+              href={`/manage/functionality/${func.functionalityId}`}
+              className="block rounded-md p-2 text-sm transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none"
+            >
+              {func.name}
+            </Link>
+          ))}
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  }
+
+  // Case 2: Submodule has NO functionalities -> render a simple link
+  return (
+       <Link
+      key={sub.submoduleId}
+      href={`/manage/${sub.submoduleId}`}
+      className="block rounded-md p-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none"
+    >
+      {sub.name}
+    </Link>
+  );
+};
+
+
+// --- UPDATED MenuContent to use the new component ---
 const MenuContent = ({ module }: { module: any }) => (
   <div className="flex flex-col space-y-1">
     {module.submodules.map((sub: any) => (
-      <Link
-        key={sub.submoduleId}
-        href={`/manage/${sub.submoduleId}`} // Your link structure might differ
-        className="block rounded-md p-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none"
-      >
-        {sub.name}
-      </Link>
+      <SubmoduleMenuItem key={sub.submoduleId} sub={sub} />
     ))}
   </div>
 );
 
+
 export function SuperAdminHeader() {
+  // ... (all your existing hooks and state: router, navigationTree, roleName, etc.)
+  // NO CHANGES needed in the main component logic, only in the JSX returned by it.
+  // The rest of your SuperAdminHeader component can remain exactly the same.
+  // The only change is that `MenuContent` now handles the nesting.
   const router = useRouter();
   const { navigationTree, isLoading } = usePrivilegeContext();
-  // navigationTree is a Map<string, NavigationNode> but comes from external
-  // data; cast its iterator results to any to make rendering safe here.
   const [roleName, setRoleName] = useState<string | null>(null);
-
   const navRef = useRef<HTMLElement>(null);
   const grabScrollProps = useGrabToScroll(navRef);
   const isHoverCapable = useHoverCapability();
-
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // --- FIX: Add a state to track if the component has mounted ---
   const [hasMounted, setHasMounted] = useState(false);
-
   const handleMouseEnter = (moduleName: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setHoveredCategory(moduleName);
@@ -74,15 +120,11 @@ export function SuperAdminHeader() {
   const handleMouseLeave = () => {
     timerRef.current = setTimeout(() => setHoveredCategory(null), 200);
   };
-
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(false);
-
-  // --- FIX: Set hasMounted to true only on the client ---
   useEffect(() => {
     setHasMounted(true);
   }, []);
-
   useEffect(() => {
     const navElement = navRef.current;
     if (!navElement) return;
@@ -99,20 +141,23 @@ export function SuperAdminHeader() {
       window.removeEventListener("resize", checkScroll);
     };
   }, [navigationTree, isLoading]);
-
   useEffect(() => {
     loadTokens();
     const storedRole = localStorage.getItem("role_name");
     if (storedRole) setRoleName(storedRole);
-    else router.push("/login");
+    else {
+      navigateToRoleOrLogin(router);
+    }
   }, [router]);
-
   const handleLogout = () => {
     clearTokens();
     router.push("/login");
   };
 
   return (
+    // ... your existing JSX for the header ...
+    // The part rendering the links/popovers is what matters.
+    // I've copied the full return statement for clarity.
     <header className="sticky top-0 z-50 w-full border-b border-border dark:bg-slate-950 bg-white">
       {/* Top Bar (no changes) */}
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
@@ -151,8 +196,6 @@ export function SuperAdminHeader() {
 
       {/* Second Navbar (Mega Menu) */}
       <div className="border-t border-border">
-        {/* --- FIX: Modify the conditional rendering logic --- */}
-        {/* Always render the skeleton on the server and on the initial client render */}
         {!hasMounted || isLoading ? (
           <NavSkeleton />
         ) : (

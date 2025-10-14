@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { clearTokens, loadTokens } from "@/lib/api/auth";
+import { clearTokens, loadTokens, navigateToRoleOrLogin } from "@/lib/api/auth";
 import { ModeToggle } from "../ui/ModeToggle";
 
 export function AdminHeader() {
@@ -21,13 +21,15 @@ export function AdminHeader() {
   const [roleName, setRoleName] = useState<string | null>(null);
 
   useEffect(() => {
-    loadTokens(); // loads tokens into memory
+    // Load tokens into memory and let centralized helper decide where to go.
+    loadTokens();
     const storedRole = localStorage.getItem("role_name");
-    if (storedRole) {
-      setRoleName(storedRole);
-    } else {
-      // if no user data, redirect to login
-      router.push("/login");
+    if (storedRole) setRoleName(storedRole);
+    else {
+      // If there's no stored role, attempt to navigate based on tokens (which
+      // may trigger a refresh). This prevents flashing a login redirect when a
+      // valid token is present but role_name hasn't been synced into localStorage yet.
+      navigateToRoleOrLogin(router);
     }
   }, [router]);
 
@@ -56,27 +58,41 @@ export function AdminHeader() {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/admin" className="text-sm font-medium hover:text-primary">
+            <Link
+              href="/admin"
+              className="text-sm font-medium hover:text-primary"
+            >
               Dashboard
             </Link>
-            <Link href="/admin/users" className="text-sm font-medium hover:text-primary">
+            <Link
+              href="/admin/users"
+              className="text-sm font-medium hover:text-primary"
+            >
               Users
             </Link>
-            <Link href="/admin/medicines" className="text-sm font-medium hover:text-primary">
+            <Link
+              href="/admin/medicines"
+              className="text-sm font-medium hover:text-primary"
+            >
               Medicines
             </Link>
-            <Link href="/admin/orders" className="text-sm font-medium hover:text-primary">
+            <Link
+              href="/admin/orders"
+              className="text-sm font-medium hover:text-primary"
+            >
               Orders
             </Link>
-            <Link href="/admin/reports" className="text-sm font-medium hover:text-primary">
+            <Link
+              href="/admin/reports"
+              className="text-sm font-medium hover:text-primary"
+            >
               Reports
             </Link>
           </nav>
 
           {/* User actions */}
           <div className="flex items-center gap-4">
-            <ModeToggle  />
-
+            <ModeToggle />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

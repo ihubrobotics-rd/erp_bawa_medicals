@@ -137,7 +137,8 @@ export const usePrivileges = () => {
     },
     // Standard react-query options
     refetchOnWindowFocus: true,
-    refetchInterval: 10000,
-    enabled: !!currentRoleId, // Query will only run if roleId exists
+    refetchInterval: 30000,// 30 seconds
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: !!currentRoleId, 
   });
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,8 +24,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
 import { loginSchema, type LoginFormData } from "@/utils/validation";
-import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { Loader2, Eye, EyeOff, Terminal } from "lucide-react";
 import {
   getAccessToken,
   isTokenExpired,
@@ -35,6 +34,8 @@ import {
 
 export default function LoginPage() {
   const [error, setError] = useState<string>("");
+  const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const { login, isLoading } = useAuth();
   const router = useRouter();
 
@@ -46,7 +47,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setError("");
-      const user = await login(data.username, data.password); // ✅ Pass both
+      const user = await login(data.username, data.password);
 
       // Use replace so user can't go back to login via browser back
       switch (user.role_name) {
@@ -60,18 +61,18 @@ export default function LoginPage() {
           router.replace("/dashboard");
       }
     } catch (err: any) {
-      // Show backend errors (if available)
       if (err?.response?.data?.errors) {
         const serverErrors = err.response.data.errors;
         const firstErrorKey = Object.keys(serverErrors)[0];
-        setError(serverErrors[firstErrorKey][0]); // show first backend error
+        setError(serverErrors[firstErrorKey][0]);
       } else {
         setError(err instanceof Error ? err.message : "Login failed");
       }
     }
   };
 
-  // If already authenticated, redirect away from login immediately
+  // This useEffect handles redirecting already-authenticated users.
+  // It's crucial and its logic is preserved.
   useEffect(() => {
     let mounted = true;
 
@@ -83,10 +84,9 @@ export default function LoginPage() {
         try {
           await refreshAccessToken();
         } catch (e) {
-          return; 
+          return;
         }
       }
-      // If refreshed/valid, redirect based on stored role
       if (!mounted) return;
       const role = getRoleName();
       if (role === "Super admin") router.replace("/super-admin");
@@ -101,16 +101,69 @@ export default function LoginPage() {
     };
   }, [router]);
 
+  // This useEffect handles the initial loading state to prevent UI flashing.
+  // Its logic is also preserved.
+  useEffect(() => {
+    let mounted = true;
+    const run = async () => {
+      const token = getAccessToken();
+      if (!token) {
+        if (mounted) setCheckingAuth(false);
+        return;
+      }
+      try {
+        if (isTokenExpired(token)) {
+          await refreshAccessToken();
+        }
+      } catch (e) {
+        if (mounted) setCheckingAuth(false);
+        return;
+      }
+      if (mounted) setCheckingAuth(false);
+    };
+
+    run();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Show a spinner while we check existing auth state
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">ERP System</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
+      {/* Left side: Branding/Image */}
+      <div className="hidden bg-muted lg:flex flex-col items-center justify-center p-2 text-center ">
+        <div className="bg-gradient-to-b from-orange-600 to-yellow-200 w-full h-full flex items-center justify-center rounded-lg">
+        <div className="max-w-md  ">
+            <h1 className="text-4xl font-bold tracking-tight text-white">
+              Bawa Medicals
+            </h1>
+            
+        </div>
+        </div>
+      </div>
+
+      {/* Right side: Login Form */}
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-sm space-y-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold">Welcome Back</h1>
+            <p className="text-muted-foreground">
+              Enter your credentials to access your account
+            </p>
+          </div>
+          
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="username"
@@ -120,7 +173,7 @@ export default function LoginPage() {
                     <FormControl>
                       <Input
                         type="text"
-                        placeholder="Enter your username"
+                        placeholder="your_username"
                         {...field}
                       />
                     </FormControl>
@@ -133,31 +186,82 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <div className="flex items-center">
+                      <FormLabel>Password</FormLabel>
+                      {/* <a
+                        href="#" // Replace with your forgot password link
+                        className="ml-auto inline-block text-sm underline"
+                      >
+                        Forgot password?
+                      </a> */}
+                    </div>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Enter your password"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" aria-hidden="true" />
+                          ) : (
+                            <Eye className="h-4 w-4" aria-hidden="true" />
+                          )}
+                          <span className="sr-only">
+                            {showPassword ? "Hide password" : "Show password"}
+                          </span>
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
+
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign In
               </Button>
+
             </form>
           </Form>
-        </CardContent>
-      </Card>
+
+          {/* <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+          
+          <Button variant="outline" className="w-full" onClick={() => {}}>
+              Google
+          </Button>
+
+          <div className="mt-4 text-center text-sm">
+            Don't have an account?{" "}
+            <a href="#" className="underline">
+              Sign up
+            </a>
+          </div> */}
+        </div>
+      </div>
     </div>
   );
 }

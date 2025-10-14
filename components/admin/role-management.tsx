@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Shield, Edit, Plus, Trash2, LockKeyhole } from "lucide-react";
+import {
+  Shield,
+  Edit,
+  Plus,
+  Trash2,
+  LockKeyhole,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,6 +16,12 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -36,12 +48,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // --- HOOKS ---
 import { useRoles } from "@/hooks/useRoles";
-import { useEntities } from "@/hooks/useModules"; // NEW: Replaces useModules
-import { usePrivileges } from "@/hooks/usePrivileges"; // Refactored hook
+import { usePrivileges } from "@/hooks/usePrivileges";
 
 // --- TYPES ---
 import type { Role } from "@/lib/api/roles";
-import type { Module, Submodule, Functionality } from "@/types/modules";
+import type { SubmodulePrivilege, FunctionalityPrivilege } from "@/types/privileges";
 
 // Base type for permissions
 type PrivilegeBase = {
@@ -51,7 +62,7 @@ type PrivilegeBase = {
   can_delete: boolean;
 };
 
-// Helper component for rendering permission switches (Unchanged)
+// Helper component for rendering permission switches
 const PermissionSwitches = ({
   privileges,
   onUpdate,
@@ -90,133 +101,129 @@ const PermissionSwitches = ({
 
 export function RoleManagement() {
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    "modules" | "submodules" | "functionalities"
-  >("modules");
-
-  // --- STATE FOR ROLE CRUD (Unchanged) ---
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDesc, setNewRoleDesc] = useState("");
   const [newRoleIsActive, setNewRoleIsActive] = useState(true);
-
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
-
   const [isDeactivateAlertOpen, setIsDeactivateAlertOpen] = useState(false);
   const [roleToDeactivate, setRoleToDeactivate] = useState<Role | null>(null);
 
-  // --- HOOKS FOR DATA FETCHING ---
   const {
     rolesQuery,
     createRoleMutation,
     updateRoleMutation,
     deactivateRoleMutation,
   } = useRoles();
-  // NEW: Fetch all entities (modules, submodules, etc.)
-  const { modulesQuery, submodulesQuery, functionalitiesQuery } =
-    useEntities();
-  // NEW: Use the refactored privileges hook
+
   const {
     allPrivilegesQuery,
-    setModulePrivilegeMutation,
     setSubmodulePrivilegeMutation,
     setFunctionalityPrivilegeMutation,
   } = usePrivileges(selectedRoleId);
 
   const roles: Role[] = rolesQuery.data || [];
 
-  const defaultPrivs: PrivilegeBase = {
-    can_view: false,
-    can_add: false,
-    can_edit: false,
-    can_delete: false,
-  };
-
-
-
-  // REFACTORED: Create privilege maps from the single consolidated query with CORRECT keys
-  const modulePrivilegesMap = useMemo(() => {
-    const map = new Map<number, PrivilegeBase>();
-    // CORRECTED: Access data.modules.results
-    allPrivilegesQuery.data?.modules?.results?.forEach((p) => {
-      map.set(p.module, {
-        can_view: p.can_view,
-        can_add: p.can_add,
-        can_edit: p.can_edit,
-        can_delete: p.can_delete,
-      });
+  const uniqueModulePrivileges = useMemo(() => {
+    const allModules = allPrivilegesQuery.data?.pages.flatMap(
+        (page) => page.modules.results
+    ) || [];
+    const uniqueMap = new Map();
+    allModules.forEach(mod => {
+        if (!uniqueMap.has(mod.module)) {
+            uniqueMap.set(mod.module, mod);
+        }
     });
-    return map;
+    return Array.from(uniqueMap.values());
   }, [allPrivilegesQuery.data]);
 
-  const submodulePrivilegesMap = useMemo(() => {
-    const map = new Map<number, PrivilegeBase>();
-    // CORRECTED: Access data.submodules.results
-    allPrivilegesQuery.data?.submodules?.results?.forEach((p) => {
-      map.set(p.submodule, {
-        can_view: p.can_view,
-        can_add: p.can_add,
-        can_edit: p.can_edit,
-        can_delete: p.can_delete,
-      });
+  const uniqueSubmodulePrivileges = useMemo(() => {
+    const allSubmodules = allPrivilegesQuery.data?.pages.flatMap(
+        (page) => page.submodules.results
+      ) || [];
+    const uniqueMap = new Map();
+    allSubmodules.forEach(subPriv => {
+        if (!uniqueMap.has(subPriv.id)) {
+            uniqueMap.set(subPriv.id, subPriv);
+        }
     });
-    return map;
+    return Array.from(uniqueMap.values());
   }, [allPrivilegesQuery.data]);
 
-  const functionalityPrivilegesMap = useMemo(() => {
-    const map = new Map<number, PrivilegeBase>();
-    // CORRECTED: Access data.functionalities.results
-    allPrivilegesQuery.data?.functionalities?.results?.forEach((p) => {
-      map.set(p.functionality, {
-        can_view: p.can_view,
-        can_add: p.can_add,
-        can_edit: p.can_edit,
-        can_delete: p.can_delete,
-      });
+  const uniqueFunctionalityPrivileges = useMemo(() => {
+    const allFunctionalities = allPrivilegesQuery.data?.pages.flatMap(
+        (page) => page.functionalities.results
+    ) || [];
+    const uniqueMap = new Map();
+    allFunctionalities.forEach(funcPriv => {
+        if (!uniqueMap.has(funcPriv.id)) {
+            uniqueMap.set(funcPriv.id, funcPriv);
+        }
     });
-    return map;
+    return Array.from(uniqueMap.values());
   }, [allPrivilegesQuery.data]);
-  
-  const handlePrivilegeUpdate = (
-    entityId: number, // Use a generic name
+
+  const submodulesByModule = useMemo(() => {
+    const grouped = new Map<string, SubmodulePrivilege[]>();
+    uniqueSubmodulePrivileges.forEach((submodule) => {
+      const moduleName = submodule.module_name;
+      if (!grouped.has(moduleName)) {
+        grouped.set(moduleName, []);
+      }
+      grouped.get(moduleName)?.push(submodule);
+    });
+    return grouped;
+  }, [uniqueSubmodulePrivileges]);
+
+  const functionalitiesBySubmodule = useMemo(() => {
+    const grouped = new Map<string, FunctionalityPrivilege[]>();
+    uniqueFunctionalityPrivileges.forEach((func) => {
+        const submoduleName = func.submodule_name;
+        if (!grouped.has(submoduleName)) {
+            grouped.set(submoduleName, []);
+        }
+        grouped.get(submoduleName)?.push(func);
+    });
+    return grouped;
+  }, [uniqueFunctionalityPrivileges]);
+
+  const handleSubmodulePrivilegeUpdate = (
+    submodulePrivilege: SubmodulePrivilege,
     key: keyof PrivilegeBase,
     value: boolean
   ) => {
     if (!selectedRoleId) return;
-
-    if (activeTab === "modules") {
-      const currentPrivs = modulePrivilegesMap.get(entityId) || defaultPrivs;
-      const payload = {
-        role: selectedRoleId,
-        module: entityId,
-        ...currentPrivs,
-        [key]: value,
-      };
-      setModulePrivilegeMutation.mutate(payload);
-    } else if (activeTab === "submodules") {
-      const currentPrivs = submodulePrivilegesMap.get(entityId) || defaultPrivs;
-      const payload = {
-        role: selectedRoleId,
-        submodule: entityId,
-        ...currentPrivs,
-        [key]: value,
-      };
-      setSubmodulePrivilegeMutation.mutate(payload);
-    } else {
-      const currentPrivs =
-        functionalityPrivilegesMap.get(entityId) || defaultPrivs;
-      const payload = {
-        role: selectedRoleId,
-        functionality: entityId,
-        ...currentPrivs,
-        [key]: value,
-      };
-      setFunctionalityPrivilegeMutation.mutate(payload);
-    }
+    const payload = {
+      role: selectedRoleId,
+      submodule: submodulePrivilege.submodule,
+      can_view: submodulePrivilege.can_view,
+      can_add: submodulePrivilege.can_add,
+      can_edit: submodulePrivilege.can_edit,
+      can_delete: submodulePrivilege.can_delete,
+      [key]: value,
+    };
+    setSubmodulePrivilegeMutation.mutate(payload);
   };
 
-  // Role CRUD handlers (Unchanged)
+  const handleFunctionalityPrivilegeUpdate = (
+    functionalityPrivilege: FunctionalityPrivilege,
+    key: keyof PrivilegeBase,
+    value: boolean
+  ) => {
+    if (!selectedRoleId) return;
+    const payload = {
+        role: selectedRoleId,
+        functionality: functionalityPrivilege.functionality,
+        can_view: functionalityPrivilege.can_view,
+        can_add: functionalityPrivilege.can_add,
+        can_edit: functionalityPrivilege.can_edit,
+        can_delete: functionalityPrivilege.can_delete,
+        [key]: value,
+    };
+    setFunctionalityPrivilegeMutation.mutate(payload);
+  };
+
   const handleCreateRole = async () => {
     if (!newRoleName.trim()) return;
     try {
@@ -276,16 +283,10 @@ export function RoleManagement() {
     }
   };
 
-  // Combine loading states for a better UX
-  const isPrivilegesLoading =
-    modulesQuery.isLoading ||
-    allPrivilegesQuery.isLoading ||
-    submodulesQuery.isLoading ||
-    functionalitiesQuery.isLoading;
+  const isPrivilegesLoading = allPrivilegesQuery.isLoading;
 
   return (
     <div className="space-y-6">
-      {/* --- Header and Role CRUD Dialogs (Unchanged UI) --- */}
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Roles & Privileges</h3>
         <Button onClick={() => setIsCreateOpen(true)}>
@@ -419,7 +420,6 @@ export function RoleManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* --- Main Layout: Roles List and Privileges Panel --- */}
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <h4 className="font-medium">System Roles</h4>
@@ -486,7 +486,6 @@ export function RoleManagement() {
           )}
         </div>
 
-        {/* --- Privileges Panel --- */}
         <div>
           {selectedRoleId ? (
             <Card>
@@ -496,146 +495,132 @@ export function RoleManagement() {
                   {roles.find((r) => r.id === selectedRoleId)?.name}
                 </CardTitle>
                 <CardDescription>
-                  Changes are saved automatically when you toggle a permission.
+                  Click on a module to view and manage its submodules. Changes
+                  are saved automatically.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Tabs */}
-                <div className="flex gap-2 mb-4">
-                  <Button
-                    variant={activeTab === "modules" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setActiveTab("modules")}
-                  >
-                    Modules
-                  </Button>
-                  <Button
-                    variant={activeTab === "submodules" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setActiveTab("submodules")}
-                  >
-                    Submodules
-                  </Button>
-                  <Button
-                    variant={
-                      activeTab === "functionalities" ? "default" : "ghost"
-                    }
-                    size="sm"
-                    onClick={() => setActiveTab("functionalities")}
-                  >
-                    Functionalities
-                  </Button>
-                </div>
-
-                {/* --- MODULES TAB --- */}
-                {activeTab === "modules" && (
+                {isPrivilegesLoading ? (
+                  <div className="space-y-2 p-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                ) : uniqueModulePrivileges.length > 0 ? (
                   <>
-                    {isPrivilegesLoading ? (
-                      <div className="space-y-4">
-                        <Skeleton className="h-14 w-full" />
-                        <Skeleton className="h-14 w-full" />
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {modulesQuery.data?.map((module: Module) => (
-                          <div
-                            key={module.id}
-                            className="border rounded-lg p-4"
-                          >
-                            <div className="flex justify-between items-center flex-wrap gap-4">
-                              <h4 className="font-semibold">{module.name}</h4>
-                              <PermissionSwitches
-                                entityId={`mod-${module.id}`}
-                                privileges={
-                                  modulePrivilegesMap.get(module.id) ||
-                                  defaultPrivs
-                                }
-                                onUpdate={(key, value) =>
-                                  handlePrivilegeUpdate(module.id, key, value)
-                                }
-                                isLoading={
-                                  setModulePrivilegeMutation.isPending
-                                }
-                              />
+                    <Accordion type="single" collapsible className="w-full">
+                      {uniqueModulePrivileges.map((modulePriv) => (
+                        <AccordionItem
+                          key={modulePriv.module}
+                          value={`module-${modulePriv.module}`}
+                        >
+                          <AccordionTrigger className="font-semibold hover:no-underline px-4">
+                            {modulePriv.module_name}
+                          </AccordionTrigger>
+                          <AccordionContent className="bg-muted/40 p-1">
+                            <div className="space-y-2 p-3">
+                              {submodulesByModule.has(modulePriv.module_name) ? (
+                                submodulesByModule
+                                  .get(modulePriv.module_name)!
+                                  .map((subPriv) => (
+                                    <div
+                                      key={subPriv.id}
+                                      className="border rounded-lg p-3 bg-background"
+                                    >
+                                      <div className="flex justify-between items-center flex-wrap gap-4">
+                                        <h4 className="font-medium text-sm">
+                                          {subPriv.submodule_name}
+                                        </h4>
+                                        <PermissionSwitches
+                                          entityId={`sub-${subPriv.submodule}`}
+                                          privileges={{
+                                            can_view: subPriv.can_view,
+                                            can_add: subPriv.can_add,
+                                            can_edit: subPriv.can_edit,
+                                            can_delete: subPriv.can_delete,
+                                          }}
+                                          onUpdate={(key, value) =>
+                                            handleSubmodulePrivilegeUpdate(
+                                              subPriv,
+                                              key,
+                                              value
+                                            )
+                                          }
+                                          isLoading={
+                                            setSubmodulePrivilegeMutation.isPending
+                                          }
+                                        />
+                                      </div>
+                                      
+                                      {functionalitiesBySubmodule.has(subPriv.submodule_name) && (
+                                        <div className="mt-3 pt-3 pl-4 border-t space-y-2">
+                                          {functionalitiesBySubmodule
+                                            .get(subPriv.submodule_name)!
+                                            .map((funcPriv) => (
+                                              <div
+                                                key={funcPriv.id}
+                                                className="flex justify-between items-center flex-wrap gap-4"
+                                              >
+                                                <p className="font-normal text-sm text-muted-foreground">
+                                                  {funcPriv.functionality_name}
+                                                </p>
+                                                <PermissionSwitches
+                                                  entityId={`func-${funcPriv.functionality}`}
+                                                  privileges={{
+                                                    can_view: funcPriv.can_view,
+                                                    can_add: funcPriv.can_add,
+                                                    can_edit: funcPriv.can_edit,
+                                                    can_delete: funcPriv.can_delete,
+                                                  }}
+                                                  onUpdate={(key, value) => 
+                                                    handleFunctionalityPrivilegeUpdate(
+                                                      funcPriv,
+                                                      key,
+                                                      value
+                                                    )
+                                                  }
+                                                  isLoading={
+                                                    setFunctionalityPrivilegeMutation.isPending
+                                                  }
+                                                />
+                                              </div>
+                                            ))
+                                          }
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))
+                              ) : (
+                                <p className="text-sm text-muted-foreground text-center p-4">
+                                  No submodules found for this module.
+                                </p>
+                              )}
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                    
+                    <div className="mt-6 text-center">
+                      {allPrivilegesQuery.hasNextPage && (
+                        <Button
+                          onClick={() => allPrivilegesQuery.fetchNextPage()}
+                          disabled={allPrivilegesQuery.isFetchingNextPage}
+                          variant="outline"
+                        >
+                          {allPrivilegesQuery.isFetchingNextPage
+                            ? "Loading More..."
+                            : "Load More"}
+                        </Button>
+                      )}
+                    </div>
 
-                {/* --- SUBMODULES TAB --- */}
-                {activeTab === "submodules" && (
-                  <>
-                    {isPrivilegesLoading ? (
-                      <div className="space-y-4">
-                        <Skeleton className="h-14 w-full" />
-                        <Skeleton className="h-14 w-full" />
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {submodulesQuery.data?.map((sub: Submodule) => (
-                          <div key={sub.id} className="border rounded-lg p-4">
-                            <div className="flex justify-between items-center flex-wrap gap-4">
-                              <h4 className="font-semibold">{sub.name}</h4>
-                              <PermissionSwitches
-                                entityId={`sub-${sub.id}`}
-                                privileges={
-                                  submodulePrivilegesMap.get(sub.id) ||
-                                  defaultPrivs
-                                }
-                                onUpdate={(key, value) =>
-                                  handlePrivilegeUpdate(sub.id, key, value)
-                                }
-                                isLoading={
-                                  setSubmodulePrivilegeMutation.isPending
-                                }
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </>
-                )}
-
-                {/* --- FUNCTIONALITIES TAB --- */}
-                {activeTab === "functionalities" && (
-                  <>
-                    {isPrivilegesLoading ? (
-                      <div className="space-y-4">
-                        <Skeleton className="h-14 w-full" />
-                        <Skeleton className="h-14 w-full" />
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {functionalitiesQuery.data?.map((func: Functionality) => (
-                          <div
-                            key={func.id}
-                            className="border rounded-lg p-4"
-                          >
-                            <div className="flex justify-between items-center flex-wrap gap-4">
-                              <h4 className="font-semibold">{func.name}</h4>
-                              <PermissionSwitches
-                                entityId={`func-${func.id}`}
-                                privileges={
-                                  functionalityPrivilegesMap.get(func.id) ||
-                                  defaultPrivs
-                                }
-                                onUpdate={(key, value) =>
-                                  handlePrivilegeUpdate(func.id, key, value)
-                                }
-                                isLoading={
-                                  setFunctionalityPrivilegeMutation.isPending
-                                }
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
+                ) : (
+                  <div className="p-8 text-center">
+                    <p className="text-muted-foreground">
+                      No modules have been assigned privileges for this role.
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>

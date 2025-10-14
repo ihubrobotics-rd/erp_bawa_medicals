@@ -1,5 +1,10 @@
 // types/privileges.ts
-
+export type PrivilegeBase = {
+  can_view: boolean;
+  can_add: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+};
 export interface ModulePrivilege {
   id: number;
   role: number;
@@ -24,16 +29,15 @@ export interface SubmodulePrivilege {
   can_delete: boolean;
 }
 
-export interface FunctionalityPrivilege {
+export interface FunctionalityPrivilege extends PrivilegeBase {
   id: number;
   role: number;
-  role_name?: string;
-  functionality: number; // This is the functionality ID
-  functionality_name?: string;
-  can_view: boolean;
-  can_add: boolean;
-  can_edit: boolean;
-  can_delete: boolean;
+  role_name: string;
+  functionality: number;
+  functionality_name: string;
+  submodule_name: string;
+  module_name: string;
+  created_at: string;
 }
 
 // Helper type to match the paginated structure from your API

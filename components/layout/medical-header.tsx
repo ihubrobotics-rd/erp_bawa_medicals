@@ -1,37 +1,60 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { Search, ShoppingCart, MapPin, ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { categories } from "@/data/catagories"
+import { useState } from "react";
+import Link from "next/link";
+import { Search, ShoppingCart, MapPin, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { categories } from "@/data/catagories";
 import { useRouter } from "next/navigation";
-import { ModeToggle } from "../ui/ModeToggle"
-
+import { ModeToggle } from "../ui/ModeToggle";
 
 const cities = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad"];
 
- 
-
 export function MedicalHeader() {
-  const router = useRouter(); 
-  const [searchQuery, setSearchQuery] = useState("")
-  const [location, setLocation] = useState("Mumbai")
-  const [hoveredCategory, setHoveredCategory] = useState(null)
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [location, setLocation] = useState("Mumbai");
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
-  const handleLogin = () => {
-    router.push('/login');
-  }
+  const handleLogin = async () => {
+    // if already authenticated, route to their role-specific landing page
+    const { getAccessToken, isTokenExpired, refreshAccessToken, getRoleName } =
+      await import("@/lib/api/auth");
 
+    const token = getAccessToken();
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      if (isTokenExpired(token)) {
+        await refreshAccessToken();
+      }
+
+      const role = getRoleName();
+      if (role === "Super admin") router.push("/super-admin");
+      else if (role === "Admin") router.push("/admin");
+      else router.push("/dashboard");
+    } catch (e) {
+      // failed refresh -> go to login
+      router.push("/login");
+    }
+  };
 
   return (
     <header className="bg-white border-b border-border sticky top-0 z-50">
       {/* Top Banner */}
       <div className="bg-primary text-primary-foreground py-2 px-4 text-center text-sm">
-        Limited Period Offer: Get up to 25% off + extra 15% off on medicines & more offers.{" "}
+        Limited Period Offer: Get up to 25% off + extra 15% off on medicines &
+        more offers.{" "}
         <Link href="/offers" className="underline font-medium">
           Explore
         </Link>
@@ -50,29 +73,29 @@ export function MedicalHeader() {
         {/* Location */}
         <div className="flex items-center gap-2 text-sm">
           <MapPin className="w-4 h-4 text-muted-foreground" />
-           <Popover>
-    <PopoverTrigger asChild>
-      <Button variant="ghost" className="flex items-center gap-1">
-        {location} <ChevronDown className="w-3 h-3" />
-      </Button>
-    </PopoverTrigger>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-1">
+                {location} <ChevronDown className="w-3 h-3" />
+              </Button>
+            </PopoverTrigger>
 
-    <PopoverContent className="w-48">
-      <div className="flex flex-col gap-2">
-        {cities.map((city) => (
-          <button
-            key={city}
-            onClick={() => setLocation(city)}
-            className={`text-left px-2 py-1 rounded-md hover:bg-accent hover:text-accent-foreground ${
-              city === location ? "bg-accent font-medium" : ""
-            }`}
-          >
-            {city}
-          </button>
-        ))}
-      </div>
-    </PopoverContent>
-  </Popover>
+            <PopoverContent className="w-48">
+              <div className="flex flex-col gap-2">
+                {cities.map((city) => (
+                  <button
+                    key={city}
+                    onClick={() => setLocation(city)}
+                    className={`text-left px-2 py-1 rounded-md hover:bg-accent hover:text-accent-foreground ${
+                      city === location ? "bg-accent font-medium" : ""
+                    }`}
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Search */}
@@ -88,8 +111,10 @@ export function MedicalHeader() {
 
         {/* Cart */}
         <div className="flex items-center gap-4">
-          <ModeToggle  />
-          <Button variant="ghost" size="sm" onClick={handleLogin}>Login</Button>
+          <ModeToggle />
+          <Button variant="ghost" size="sm" onClick={handleLogin}>
+            Login
+          </Button>
           <Button variant="ghost" size="icon" className="relative">
             <ShoppingCart className="w-5 h-5" />
             <Badge className="absolute -top-2 -right-2 w-5 h-5 rounded-full p-0 flex items-center justify-center text-xs">
@@ -104,16 +129,16 @@ export function MedicalHeader() {
         <div className="container mx-auto px-4">
           <nav className="flex items-center gap-6 py-3 overflow-x-auto horizontal-scroll">
             {categories.map((category) => (
-              <Popover 
-                key={category.name} 
+              <Popover
+                key={category.name}
                 open={hoveredCategory === category.name}
                 onOpenChange={(open) => {
-                  if (!open) setHoveredCategory(null)
+                  if (!open) setHoveredCategory(null);
                 }}
               >
                 <PopoverTrigger asChild>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className="flex items-center gap-1 text-sm font-medium whitespace-nowrap cursor-pointer"
                     onMouseEnter={() => setHoveredCategory(category.name)}
                     onMouseLeave={() => setHoveredCategory(null)}
@@ -121,7 +146,7 @@ export function MedicalHeader() {
                     {category.name} <ChevronDown className="w-3 h-3" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent 
+                <PopoverContent
                   className="w-[700px] p-6 grid grid-cols-3 gap-4"
                   onMouseEnter={() => setHoveredCategory(category.name)}
                   onMouseLeave={() => setHoveredCategory(null)}
@@ -133,7 +158,10 @@ export function MedicalHeader() {
                         <ul className="pl-2 space-y-1">
                           {sub.children.map((child) => (
                             <li key={child.name}>
-                              <Link href={child.href} className="hover:text-primary text-sm">
+                              <Link
+                                href={child.href}
+                                className="hover:text-primary text-sm"
+                              >
                                 {child.name}
                               </Link>
                             </li>
@@ -141,7 +169,10 @@ export function MedicalHeader() {
                         </ul>
                       )}
                       {!sub.children && (
-                        <Link href={sub.href} className="hover:text-primary text-sm">
+                        <Link
+                          href={sub.href}
+                          className="hover:text-primary text-sm"
+                        >
                           View {sub.name}
                         </Link>
                       )}
@@ -154,5 +185,5 @@ export function MedicalHeader() {
         </div>
       </div>
     </header>
-  )
+  );
 }

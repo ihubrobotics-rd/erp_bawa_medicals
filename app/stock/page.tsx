@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Plus, AlertTriangle, Package, TrendingDown, TrendingUp, Filter } from "lucide-react"
+import { Search, Plus, AlertTriangle, Package, TrendingDown, TrendingUp, Filter, Camera } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,7 @@ import { AddStockForm } from "@/components/stock/add-stock-form"
 import { StockAlertsList } from "@/components/stock/stock-alerts-list"
 import { LowStockReport } from "@/components/stock/low-stock-report"
 import type { Medicine } from "@/types/medical"
+import { AddStockFlow } from "@/components/stock/AddStockFlow"
 
 const mockMedicines: Medicine[] = [
   {
@@ -123,6 +124,8 @@ export default function StockManagement() {
   const [stockFilter, setStockFilter] = useState("all")
   const [showAddStockForm, setShowAddStockForm] = useState(false)
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null)
+    const [showAddStockFlow, setShowAddStockFlow] = useState(false) // Add new state
+
 
   const filteredMedicines = mockMedicines.filter((medicine) => {
     const matchesSearch =
@@ -201,6 +204,13 @@ export default function StockManagement() {
               <p className="text-xs text-muted-foreground">Total inventory value</p>
             </CardContent>
           </Card>
+        </div>
+
+           <div className="flex justify-end mb-4">
+            <Button onClick={() => setShowAddStockFlow(true)}>
+                <Camera className="w-4 h-4 mr-2" />
+                Add Stock via Camera
+            </Button>
         </div>
 
         <Tabs defaultValue="inventory" className="w-full">
@@ -286,6 +296,7 @@ export default function StockManagement() {
           </TabsContent>
         </Tabs>
       </div>
+      {showAddStockFlow && <AddStockFlow onClose={() => setShowAddStockFlow(false)} />}
 
       {/* Add Stock Form Modal */}
       {showAddStockForm && (

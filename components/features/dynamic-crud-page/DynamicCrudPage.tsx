@@ -28,7 +28,6 @@ import { DynamicForm } from './DynamicForm';
 export function DynamicCrudPage({ schema }: { schema: any }) {
   const queryClient = useQueryClient();
 
-  // --- Data Transformation ---
   const privileges = schema.role_privileges[0];
   const pageTitle = schema.submodules[0].name;
   const apiRoutes = schema.submodules[0].api_routes;
@@ -39,13 +38,11 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     header: field.label,
   }));
 
-  // --- STATE MANAGEMENT ---
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<any | null>(null);
 
-  // --- HANDLERS ---
   const handleAddNew = () => {
     setEditingItem(null);
     setIsFormOpen(true);
@@ -61,7 +58,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     setIsAlertOpen(true);
   };
 
-  // --- MUTATIONS ---
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       const deleteUrl = apiRoutes.delete.replace('<int:pk>', String(id));
@@ -69,17 +65,12 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       return response.data;
     },
     onSuccess: (data) => {
-      const message = data?.message || 'Item deleted successfully!';
-    toast.success(message);
+      toast.success(data?.message || 'Item deleted successfully!');
       queryClient.invalidateQueries({ queryKey: ['tableData', apiRoutes.get_all] });
       setItemToDelete(null);
     },
     onError: (error: any) => {
-      const message =
-      error?.response?.data?.message ||
-      'Failed to delete item. Please try again.';
-    toast.error(message);
-      console.error(error);
+      toast.error(error?.response?.data?.message || 'Failed to delete item.');
       setItemToDelete(null);
     },
   });
@@ -90,7 +81,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     }
     setIsAlertOpen(false);
   };
-  
+
   const isEditMode = !!editingItem;
 
   return (
@@ -109,8 +100,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
         onEdit={handleEdit}
         onDelete={handleDeleteClick}
       />
-      
-      {/* Edit/Add Form Dialog */}
+
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
@@ -124,34 +114,31 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className=" pr-4">
-              <DynamicForm
-                key={editingItem ? editingItem.id : 'new'}
-                schema={formSchema}
-                apiCreateRoute={apiRoutes.create}
-                apiUpdateRoute={apiRoutes.update}
-                apiGetAllRoute={apiRoutes.get_all}
-                initialData={editingItem}
-                onClose={() => setIsFormOpen(false)}
-              />
+          {/* IMPROVEMENT: Added overflow-y-auto for long forms */}
+          <div className="overflow-y-auto pr-4">
+            <DynamicForm
+              key={editingItem ? editingItem.id : 'new'}
+              schema={formSchema}
+              apiCreateRoute={apiRoutes.create}
+              apiUpdateRoute={apiRoutes.update}
+              apiGetAllRoute={apiRoutes.get_all}
+              initialData={editingItem}
+              onClose={() => setIsFormOpen(false)}
+            />
           </div>
         </DialogContent>
       </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
+
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              item.
+              This action cannot be undone. This will permanently delete the item.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setItemToDelete(null)}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setItemToDelete(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"

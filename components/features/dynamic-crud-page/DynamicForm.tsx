@@ -14,22 +14,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { DynamicDropdown, StaticDropdown } from './DropdownFields';
 
-type DynamicFormProps = {
-  schema: any[];
-  apiCreateRoute: string;
-  apiUpdateRoute: string;
-  apiGetAllRoute: string;
-  initialData?: any | null;
-  onClose: () => void;
-};
-
-// --- 1. Define default options for radio buttons ---
-// We will use these if the API doesn't provide specific options.
 const defaultRadioOptions = [
   { label: 'Yes', value: 'true' },
   { label: 'No', value: 'false' },
 ];
-
 
 export function DynamicForm({
   schema,
@@ -38,12 +26,14 @@ export function DynamicForm({
   apiGetAllRoute,
   initialData = null,
   onClose,
-}: DynamicFormProps) {
+}) {
   const queryClient = useQueryClient();
   const isEditMode = !!initialData;
 
+  // Generate a Zod schema dynamically from the API definition
   const formSchema = generateZodSchema(schema);
 
+  // Initialize react-hook-form
   const {
     register,
     handleSubmit,
@@ -51,116 +41,91 @@ export function DynamicForm({
     setValue,
     reset,
     control,
+    watch, 
   } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {},
   });
 
+  // Effect to reset the form when in edit mode and the data changes
   useEffect(() => {
-    if (isEditMode) {
+    if (isEditMode && initialData) {
       reset(initialData);
     }
   }, [initialData, reset, isEditMode]);
 
-// --- CREATE MUTATION ---
-const createMutation = useMutation({
-  mutationFn: async (newData: any) => {
-    const res = await api.post(apiCreateRoute, newData);
-    return res.data; // so we can access .message
-  },
-  onSuccess: (data) => {
-    const message = data?.message || "Item created successfully!";
-    toast.success(message);
-    queryClient.invalidateQueries({ queryKey: ['tableData', apiGetAllRoute] });
-    onClose();
-  },
-  onError: (error: any) => {
-    const backendData = error?.response?.data;
-    const message = backendData?.message || "Failed to create item.";
-    const fieldErrors = backendData?.errors || {};
+  // Mutation for creating or updating data
+  const mutation = useMutation({
+    mutationFn: async (formData: any) => {
+      const endpoint = isEditMode
+        ? apiUpdateRoute.replace('<int:pk>', String(initialData.id))
+        : apiCreateRoute;
 
-    let details = "";
-    Object.entries(fieldErrors).forEach(([field, messages]) => {
-      details += `\n${field}: ${(messages as string[]).join(", ")}`;
-    });
+      const method = isEditMode ? api.put : api.post;
+      const res = await method(endpoint, formData);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || (isEditMode ? 'Updated successfully!' : 'Created successfully!'));
+      queryClient.invalidateQueries({ queryKey: ['tableData', apiGetAllRoute] });
+      onClose(); // Close the dialog/modal on success
+    },
+    onError: (error: any) => {
+      const backendData = error?.response?.data || {};
+      const message = backendData?.message || 'An unexpected error occurred.';
+      const fieldErrors = backendData?.errors || {};
 
-    toast.error(`${message}${details ? "\n" + details : ""}`);
-    console.error("Create Error:", error);
-  },
-});
+      // Format and display backend validation errors
+      const details = Object.entries(fieldErrors)
+        .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
+        .join('\n');
 
-// --- UPDATE MUTATION ---
-const updateMutation = useMutation({
-  mutationFn: async (updatedData: any) => {
-    const updateUrl = apiUpdateRoute.replace("<int:pk>", String(initialData.id));
-    const res = await api.put(updateUrl, updatedData);
-    return res.data;
-  },
-  onSuccess: (data) => {
-    const message = data?.message || "Item updated successfully!";
-    toast.success(message);
-    queryClient.invalidateQueries({ queryKey: ['tableData', apiGetAllRoute] });
-    onClose();
-  },
-  onError: (error: any) => {
-    const backendData = error?.response?.data;
-    const message = backendData?.message || "Failed to update item.";
-    const fieldErrors = backendData?.errors || {};
+      toast.error(`${message}${details ? '\n' + details : ''}`);
+    },
+  });
 
-    let details = "";
-    Object.entries(fieldErrors).forEach(([field, messages]) => {
-      details += `\n${field}: ${(messages as string[]).join(", ")}`;
-    });
-
-    toast.error(`${message}${details ? "\n" + details : ""}`);
-    console.error("Update Error:", error);
-  },
-});
-
+  // Handler for form submission
   const onSubmit = (data: any) => {
-    Object.keys(data).forEach((key) => {
-        // Convert 'true'/'false' strings from radio/checkboxes back to booleans if applicable
-        if (data[key] === 'true') {
-            data[key] = true;
-        } else if (data[key] === 'false') {
-            data[key] = false;
-        }
-        if (data[key] === '') delete data[key];
+    // Sanitize data before sending to the API
+    const sanitizedData = { ...data };
+    Object.keys(sanitizedData).forEach((key) => {
+      if (sanitizedData[key] === 'true') sanitizedData[key] = true;
+      else if (sanitizedData[key] === 'false') sanitizedData[key] = false;
+      if (sanitizedData[key] === '' || sanitizedData[key] === null) {
+        delete sanitizedData[key];
+      }
     });
-
-    if (isEditMode) {
-      updateMutation.mutate(data);
-    } else {
-      createMutation.mutate(data);
-    }
+    mutation.mutate(sanitizedData);
   };
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
-
   return (
-    // --- 4. Removed space-y-4 as the new grid gap handles spacing ---
-    <form onSubmit={handleSubmit(onSubmit)}>
-      {/* --- 3. Add a grid layout wrapper for a better UI --- */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex flex-col space-y-6"
+    >
+      {/* Responsive grid for form fields */}
+      <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
         {schema.map((field) => (
-          <div key={field.id} className="grid w-full items-center gap-1.5">
-            <Label htmlFor={field.input_name} className="capitalize">
-              {field.label} {field.is_required && <span className="text-red-500">*</span>}
+          <div key={field.id} className="flex flex-col">
+            <Label htmlFor={field.input_name} className="capitalize font-medium">
+              {field.label.replace(/_/g, ' ')}
+              {field.is_required && <span className="text-red-500">*</span>}
             </Label>
 
+            {/* Dynamic rendering of different input types */}
             {(() => {
               if (field.input_type === 'checkbox') {
                 return (
                   <Controller
                     control={control}
                     name={field.input_name}
-                    render={({ field: controllerField }) => (
-                      <div className="flex items-center pt-2">
-                          <Checkbox
-                            id={field.input_name}
-                            checked={!!controllerField.value}
-                            onCheckedChange={controllerField.onChange}
-                          />
+                    render={({ field: ctrl }) => (
+                      <div className="pt-2">
+                        <Checkbox
+                          id={field.input_name}
+                          checked={!!ctrl.value}
+                          onCheckedChange={ctrl.onChange}
+                        />
                       </div>
                     )}
                   />
@@ -168,26 +133,29 @@ const updateMutation = useMutation({
               }
 
               if (field.input_type === 'radio') {
-                // --- 2. Use the default options if field.values is not provided ---
-                const radioOptions = (field.values && field.values.length > 0) 
-                  ? field.values 
-                  : defaultRadioOptions;
-
+                const radioOptions = field.values?.length ? field.values : defaultRadioOptions;
                 return (
                   <Controller
                     control={control}
                     name={field.input_name}
-                    render={({ field: controllerField }) => (
+                    render={({ field: ctrl }) => (
                       <RadioGroup
-                        onValueChange={controllerField.onChange}
-                        // Ensure the value from the form state (which could be boolean) is a string
-                        value={String(controllerField.value)}
-                        className="flex space-x-4 pt-2"
+                        onValueChange={ctrl.onChange}
+                        value={String(ctrl.value)}
+                        className="flex flex-wrap gap-3 pt-2"
                       >
                         {radioOptions.map((option: any) => (
                           <div key={option.value} className="flex items-center space-x-2">
-                            <RadioGroupItem value={option.value} id={`${field.input_name}-${option.value}`} />
-                            <Label htmlFor={`${field.input_name}-${option.value}`}>{option.label}</Label>
+                            <RadioGroupItem
+                              value={option.value}
+                              id={`${field.input_name}-${option.value}`}
+                            />
+                            <Label
+                              htmlFor={`${field.input_name}-${option.value}`}
+                              className="text-sm font-normal"
+                            >
+                              {option.label}
+                            </Label>
                           </div>
                         ))}
                       </RadioGroup>
@@ -195,13 +163,26 @@ const updateMutation = useMutation({
                   />
                 );
               }
-              
+
               if (field.options_api) {
-                return <DynamicDropdown field={field} setValue={setValue} />;
+                return (
+                  <DynamicDropdown
+                    field={field}
+                    schema={schema} // Pass the full schema for dependency checks
+                    setValue={setValue}
+                    watch={watch} // Pass watch to make it a controlled component
+                  />
+                );
               }
-              
+
               if (field.values && field.input_type !== 'radio') {
-                return <StaticDropdown field={field} setValue={setValue} />;
+                return (
+                  <StaticDropdown
+                    field={field}
+                    setValue={setValue}
+                    watch={watch} // Pass watch for consistency
+                  />
+                );
               }
 
               return (
@@ -210,12 +191,13 @@ const updateMutation = useMutation({
                   type={field.input_type || 'text'}
                   placeholder={field.placeholder}
                   {...register(field.input_name)}
+                  className="mt-2"
                 />
               );
             })()}
-            
+
             {errors[field.input_name] && (
-              <p className="text-sm text-red-500">
+              <p className="text-xs text-red-500 mt-1">
                 {errors[field.input_name]?.message as string}
               </p>
             )}
@@ -223,12 +205,17 @@ const updateMutation = useMutation({
         ))}
       </div>
 
-      <div className="flex justify-end gap-2 pt-8"> {/* Increased top padding for separation */}
+      {/* Action buttons */}
+      <div className="flex flex-col justify-end gap-3 border-t pt-6 sm:flex-row">
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? 'Saving...' : (isEditMode ? 'Update Changes' : 'Save')}
+        <Button type="submit" disabled={mutation.isPending}>
+          {mutation.isPending
+            ? 'Saving...'
+            : isEditMode
+            ? 'Update Changes'
+            : 'Save'}
         </Button>
       </div>
     </form>

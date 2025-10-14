@@ -145,7 +145,7 @@ api.interceptors.response.use(
         );
 
         const newAccess = data.access;
-        setTokens(newAccess, refreshToken); // ✅ Save new token
+        setTokens(newAccess, refreshToken);
         processQueue(null, newAccess);
 
         originalRequest.headers.Authorization = `Bearer ${newAccess}`;
@@ -235,4 +235,42 @@ export const refreshAccessToken = async (): Promise<string> => {
   setTokens(newAccess, newRefresh);
 
   return newAccess;
+};
+
+// Navigate the user to the appropriate role landing page or to /login.
+// This centralizes the token presence/refresh check and avoids small UI flashes
+// caused by components doing naive router.push('/login') without checking tokens.
+export const navigateToRoleOrLogin = async (
+  router: { push: (p: string) => void } | any
+) => {
+  try {
+    const token = getAccessToken();
+
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    if (isTokenExpired(token)) {
+      try {
+        await refreshAccessToken();
+      } catch (e) {
+        // can't refresh -> go login
+        router.push("/login");
+        return;
+      }
+    }
+
+    const r = getRoleName();
+    if (!r) {
+      router.push("/login");
+      return;
+    }
+
+    if (r === "Super admin") router.push("/super-admin");
+    else if (r === "Admin") router.push("/admin");
+    else router.push("/dashboard");
+  } catch (e) {
+    router.push("/login");
+  }
 };

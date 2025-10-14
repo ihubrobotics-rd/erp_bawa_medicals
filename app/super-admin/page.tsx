@@ -10,7 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/user-management";
-import { RoleManagement } from "@/components/admin/role-management";
+import { RoleManagement } from "@/components/role-management/RoleManagement";
 import { SystemSettings } from "@/components/admin/system-settings";
 import { ReportsSection } from "@/components/admin/reports-section";
 import ProtectedRoute from "@/components/protected-route";

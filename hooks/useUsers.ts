@@ -1,5 +1,5 @@
-// hooks/useUsers.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   getUsers,
   createUser,
@@ -14,35 +14,67 @@ import type { User } from "@/types/medical";
 export const useUsers = (searchQuery: string = "") => {
   const queryClient = useQueryClient();
 
-  // Query to fetch the list of users
   const usersQuery = useQuery<User[]>({
-    queryKey: ["users", searchQuery], // Include search query in key to refetch on change
+    queryKey: ["users", searchQuery],
     queryFn: () => getUsers(searchQuery),
     refetchOnWindowFocus: true,
   });
 
-  // Mutation for creating a user
+  // ✅ Mutation for creating a user with proper error handling
   const createUserMutation = useMutation({
     mutationFn: (userData: CreateUserPayload) => createUser(userData),
+
     onSuccess: () => {
-      // Invalidate and refetch the users list to show the new user
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User created successfully!");
+    },
+
+    onError: (error: any) => {
+      // Safely extract message and errors
+      const response = error?.response?.data;
+      const backendMessage = response?.message || "User creation failed.";
+      const backendErrors = response?.errors || {};
+
+      // Flatten all error messages
+      const errorMessages: string[] = [];
+
+      for (const key in backendErrors) {
+        if (Array.isArray(backendErrors[key])) {
+          backendErrors[key].forEach((msg: string) =>
+            errorMessages.push(`${key !== "non_field_errors" ? `${key}: ` : ""}${msg}`)
+          );
+        }
+      }
+
+      // Show all error messages in Sonner toast
+      if (errorMessages.length > 0) {
+        errorMessages.forEach((msg) => toast.error(msg));
+      } else {
+        toast.error(backendMessage);
+      }
     },
   });
 
-  // Mutation for updating a user
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateUserPayload }) => updateUser(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateUserPayload }) =>
+      updateUser(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User updated successfully!");
+    },
+    onError: () => {
+      toast.error("Failed to update user.");
     },
   });
 
-  // Mutation for deleting a user
   const deleteUserMutation = useMutation({
     mutationFn: (id: number) => deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User deleted successfully!");
+    },
+    onError: () => {
+      toast.error("Failed to delete user.");
     },
   });
 
@@ -54,11 +86,10 @@ export const useUsers = (searchQuery: string = "") => {
   };
 };
 
-
 export const useUser = (userId: number | null) => {
   return useQuery<User>({
     queryKey: ["user", userId],
-    queryFn: () => getUserById(userId!), 
+    queryFn: () => getUserById(userId!),
     enabled: !!userId,
   });
 };

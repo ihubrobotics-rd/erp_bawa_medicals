@@ -30,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
+import { useDebounce } from "@/hooks/useDebounce"
 import { useUsers } from "@/hooks/useUsers"
 import { useRoles } from "@/hooks/useRoles"
 import { UserForm } from "./user-form"
@@ -39,19 +39,13 @@ import type { User, Role } from "@/types/medical"
 
 export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
+  const debouncedSearchQuery = useDebounce(searchQuery, 500)
   const [showUserForm, setShowUserForm] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [viewingUserId, setViewingUserId] = useState<number | null>(null)
 
-  // Debounce search input to avoid excessive API calls
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery)
-    }, 500)
-    return () => clearTimeout(handler)
-  }, [searchQuery])
+
 
   const { usersQuery, deleteUserMutation } = useUsers(debouncedSearchQuery)
   const { rolesQuery } = useRoles()
