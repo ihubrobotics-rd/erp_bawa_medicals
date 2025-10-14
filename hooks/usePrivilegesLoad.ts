@@ -71,25 +71,48 @@ const fetchAllPrivileges = async (roleId: string) => {
     }
   });
 
-  // 6. Return the final, combined data structure
-  // We update count and set total_pages to 1 as we've merged everything.
+  // 6. Deduplicate merged arrays by their canonical id fields.
+  // The API returns objects with both an internal `id` and a domain id
+  // field (module/submodule/functionality). Use the domain id when
+  // available, otherwise fall back to the generic `id`.
+  const dedupeBy = (arr: any[], keySelector: (item: any) => any) => {
+    const seen = new Set<any>();
+    const out: any[] = [];
+    for (const item of arr) {
+      const key = keySelector(item);
+      if (key === undefined || key === null) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+    }
+    return out;
+  };
+
+  const uniqueModules = dedupeBy(allModules, (x) => x.module ?? x.id);
+  const uniqueSubmodules = dedupeBy(allSubmodules, (x) => x.submodule ?? x.id);
+  const uniqueFunctionalities = dedupeBy(
+    allFunctionalities,
+    (x) => x.functionality ?? x.id
+  );
+
+  // 7. Return the final, combined data structure with updated counts/pages
   return {
     modules: {
       ...modules,
-      results: allModules,
-      count: allModules.length,
+      results: uniqueModules,
+      count: uniqueModules.length,
       total_pages: 1,
     },
     submodules: {
       ...submodules,
-      results: allSubmodules,
-      count: allSubmodules.length,
+      results: uniqueSubmodules,
+      count: uniqueSubmodules.length,
       total_pages: 1,
     },
     functionalities: {
       ...functionalities,
-      results: allFunctionalities,
-      count: allFunctionalities.length,
+      results: uniqueFunctionalities,
+      count: uniqueFunctionalities.length,
       total_pages: 1,
     },
   };
@@ -137,8 +160,8 @@ export const usePrivileges = () => {
     },
     // Standard react-query options
     refetchOnWindowFocus: true,
-    refetchInterval: 30000,// 30 seconds
+    refetchInterval: 30000, // 30 seconds
     staleTime: 2 * 60 * 1000, // 2 minutes
-    enabled: !!currentRoleId, 
+    enabled: !!currentRoleId,
   });
 };

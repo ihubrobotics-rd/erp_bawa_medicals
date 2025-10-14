@@ -1,15 +1,27 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useMemo, Dispatch, SetStateAction } from 'react';
 import {
-  useReactTable,
-  getCoreRowModel,
+  ColumnDef,
+  RowSelectionState,
   flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  SortingState,
+  ColumnFiltersState,
+  // VisibilityState has been removed
 } from '@tanstack/react-table';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import {
+  ArrowUpDown,
+  // ChevronDown has been removed
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 
-import api from '@/lib/api/auth';
 import {
   Table,
   TableBody,
@@ -20,116 +32,239 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu";
+  DropdownMenu,
+  // DropdownMenuCheckboxItem has been removed
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// A generic type for our row data
+type DataRow = {
+  [key: string]: any;
+};
 
 type DynamicTableProps = {
+  // Data and state props
+  data: DataRow[];
   columns: { accessorKey: string; header: string }[];
-  apiGetAllRoute: string;
+  isLoading: boolean;
+  isError: boolean;
+  
+  // State lifted to parent
+  rowSelection: RowSelectionState;
+  setRowSelection: Dispatch<SetStateAction<RowSelectionState>>;
+
+  // Callbacks and configuration
   privileges: {
     can_edit: boolean;
     can_delete: boolean;
   };
-  onEdit: (row: any) => void; // 1. Add onEdit prop
-  onDelete: (row: any) => void; // 2. Add onDelete prop
+  onEdit: (row: DataRow) => void;
+  onDelete: (row: DataRow) => void;
+  searchPlaceholder?: string;
+  toolbarActions?: React.ReactNode;
 };
 
 export function DynamicTable({
-  columns,
-  apiGetAllRoute,
+  data,
+  columns: initialColumns,
+  isLoading,
+  isError,
+  rowSelection,
+  setRowSelection,
   privileges,
   onEdit,
   onDelete,
+  searchPlaceholder = 'Search...',
+  toolbarActions,
 }: DynamicTableProps) {
-  const { data: tableData, isLoading, isError } = useQuery({
-    queryKey: ['tableData', apiGetAllRoute],
-    queryFn: async () => {
-      const response = await api.get(apiGetAllRoute);
-      return response.data.data.results || [];
-    },
-  });
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  // const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({}); // REMOVED
 
-  const tableColumns = useMemo(() => [
-    ...columns,
+  const columns = useMemo<ColumnDef<DataRow>[]>(() => [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    ...initialColumns.map(col => ({
+      accessorKey: col.accessorKey,
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          {col.header}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div>{row.getValue(col.accessorKey)}</div>,
+    })),
     {
       id: 'actions',
-      header: 'Actions',
-      cell: ({ row }: { row: any }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {privileges.can_edit && (
-              // 3. Connect onEdit handler
-              <DropdownMenuItem onClick={() => onEdit(row.original)}>
-                <Pencil className="mr-2 h-4 w-4" /> Edit
-              </DropdownMenuItem>
-            )}
-            {privileges.can_delete && (
-              <DropdownMenuItem
-                className="text-red-600"
-                // 4. Connect onDelete handler
-                onClick={() => onDelete(row.original)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      header: () => <div className="text-right">Actions</div>,
+      cell: ({ row }) => (
+        <div className="text-right">
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                {privileges.can_edit && (
+                <DropdownMenuItem onClick={() => onEdit(row.original)}>
+                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                </DropdownMenuItem>
+                )}
+                {privileges.can_delete && (
+                <DropdownMenuItem
+                    className="text-red-600 focus:text-red-600"
+                    onClick={() => onDelete(row.original)}
+                >
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
       ),
+      enableSorting: false,
+      enableHiding: false,
     },
-  ], [columns, privileges, onEdit, onDelete]); // 5. Add handlers to dependency array
+  ], [initialColumns, privileges, onEdit, onDelete]);
 
   const table = useReactTable({
-    data: tableData || [],
-    columns: tableColumns,
+    data: data ?? [],
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    // onColumnVisibilityChange: setColumnVisibility, // REMOVED
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      sorting,
+      columnFilters,
+      // columnVisibility, // REMOVED
+      rowSelection,
+    },
   });
-
-  if (isLoading) return <div>Loading data...</div>;
-  if (isError) return <div>Error loading data.</div>;
+  
+  if (isError) return <div className="p-4 text-center text-red-500">Error loading data.</div>;
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+    <div className="w-full space-y-4">
+      {/* --- MODIFIED TOOLBAR --- */}
+      <div className="flex items-center justify-between">
+        <Input
+          placeholder={searchPlaceholder}
+          value={(table.getColumn(initialColumns[0]?.accessorKey)?.getFilterValue() as string) ?? ''}
+          onChange={(event) =>
+            table.getColumn(initialColumns[0]?.accessorKey)?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm"
+        />
+        {/* The "Columns" dropdown has been removed from here */}
+        <div className="flex items-center gap-2">
+            {toolbarActions}
+        </div>
+      </div>
+      
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
                 ))}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length + 1} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 10 }).map((_, i) => (
+                <TableRow key={i}>
+                  {columns.map((column, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className="h-6 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      
+      <div className="flex items-center justify-between space-x-2 py-4">
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} of{' '}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
+        <div className="flex items-center space-x-2">
+            <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            >
+            Previous
+            </Button>
+            <span className="text-sm">
+                Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            </span>
+            <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            >
+            Next
+            </Button>
+        </div>
+      </div>
     </div>
   );
 }

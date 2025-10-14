@@ -15,7 +15,7 @@ import { SystemSettings } from "@/components/admin/system-settings";
 import { ReportsSection } from "@/components/admin/reports-section";
 import ProtectedRoute from "@/components/protected-route";
 import { ModuleManagement } from "@/components/admin/Modules";
-import { SuperAdminHeader } from "@/components/layout/super-admin-header";
+import { SuperAdminHeader } from "@/components/layout/All-Privilege-Header/index";
 
 const mockStats = {
   totalUsers: 156,
