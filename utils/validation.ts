@@ -30,3 +30,16 @@ export const customerSchema = z.object({
 });
 
 export type CustomerFormData = z.infer<typeof customerSchema>;
+
+
+export const productSchema = z.object({
+  name: z.string().min(1, "Product name is required"),
+  sku: z.string().min(1, "SKU is required"),
+  price: z.number().min(0, "Price must be positive"),
+  quantity: z.number().min(0, "Quantity must be positive"),
+  category: z.string().min(1, "Category is required"),
+  isActive: z.boolean().default(true),
+});
+
+export type ProductFormData = z.infer<typeof productSchema>;
+
