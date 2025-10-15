@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useMemo, Dispatch, SetStateAction } from 'react';
 import {
   ColumnDef,
@@ -12,11 +11,9 @@ import {
   useReactTable,
   SortingState,
   ColumnFiltersState,
-  // VisibilityState has been removed
 } from '@tanstack/react-table';
 import {
   ArrowUpDown,
-  // ChevronDown has been removed
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -33,7 +30,6 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
-  // DropdownMenuCheckboxItem has been removed
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
@@ -53,11 +49,9 @@ type DynamicTableProps = {
   columns: { accessorKey: string; header: string }[];
   isLoading: boolean;
   isError: boolean;
-  
   // State lifted to parent
   rowSelection: RowSelectionState;
   setRowSelection: Dispatch<SetStateAction<RowSelectionState>>;
-
   // Callbacks and configuration
   privileges: {
     can_edit: boolean;
@@ -84,7 +78,6 @@ export function DynamicTable({
 }: DynamicTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  // const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({}); // REMOVED
 
   const columns = useMemo<ColumnDef<DataRow>[]>(() => [
     {
@@ -168,7 +161,6 @@ export function DynamicTable({
     state: {
       sorting,
       columnFilters,
-      // columnVisibility, // REMOVED
       rowSelection,
     },
   });
