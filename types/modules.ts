@@ -26,3 +26,18 @@ export type Functionality = {
   submodule_name?: string;
   created_at: string;
 };
+
+
+export interface PaginationInfo {
+  count: number;
+  total_pages: number;
+  current_page: number;
+  page_size: number;
+  next: string | null;
+  previous: string | null;
+}
+
+export interface PaginatedResponse<T> {
+  pagination: PaginationInfo;
+  results: T[];
+}

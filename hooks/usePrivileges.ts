@@ -55,7 +55,7 @@ export const usePrivileges = (roleId: number | null) => {
       return undefined;
     },
     initialPageParam: 1,
-    staleTime: 5 * 60 * 1000, // 5 min cache
+    staleTime: 5 * 60 * 1000,
   });
 
   // Submodule privilege mutation with optimistic updates

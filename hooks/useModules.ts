@@ -42,7 +42,6 @@ export const useModules = (search: string = "") => {
 };
 
 // == HOOK FOR SUBMODULES & FUNCTIONALITIES ==
-// ... (No changes needed here)
 export const useSubmodules = (moduleId: number | null, search: string = "") => {
   const queryClient = useQueryClient();
 
