@@ -28,7 +28,6 @@ import { useGrabToScroll } from "@/hooks/useGrabToScroll";
 import { useHoverCapability } from "@/hooks/useHoverCapability";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-
 // NavSkeleton stays unchanged
 const NavSkeleton = () => (
   <nav className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar">
@@ -40,7 +39,6 @@ const NavSkeleton = () => (
     ))}
   </nav>
 );
-
 // SubmoduleMenuItem with animated arrow, active highlighting, and keyboard accessibility
 const SubmoduleMenuItem = ({ sub }: { sub: any }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -127,7 +125,6 @@ const SubmoduleMenuItem = ({ sub }: { sub: any }) => {
     </Link>
   );
 };
-
 // MenuContent: remains same, just calls SubmoduleMenuItem
 const MenuContent = ({ module }: { module: any }) => (
   <div className="flex flex-col space-y-1">
