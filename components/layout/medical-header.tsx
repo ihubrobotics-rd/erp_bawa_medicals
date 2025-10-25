@@ -25,14 +25,15 @@ export function MedicalHeader() {
 
   const handleLogin = async () => {
     // if already authenticated, route to their role-specific landing page
-    const { getAccessToken, isTokenExpired, refreshAccessToken, getRoleName } =
-      await import("@/lib/api/auth");
+   const { getAccessToken, isTokenExpired, refreshAccessToken, getRoleName } =
+  await import("@/lib/api/auth");
 
-    const token = getAccessToken();
-    if (!token) {
-      router.push("/login");
-      return;
-    }
+const token = getAccessToken();
+if (!token) {
+  router.push("/login");
+  return;
+}
+
 
     try {
       if (isTokenExpired(token)) {

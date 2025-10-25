@@ -44,32 +44,48 @@ export default function LoginPage() {
     defaultValues: { username: "", password: "" },
   });
 
-  const onSubmit = async (data: LoginFormData) => {
-    try {
-      setError("");
-      const user = await login(data.username, data.password);
+const onSubmit = async (data: LoginFormData) => {
+  try {
+    setError("");
+    const user = await login(data.username, data.password);
 
-      // Use replace so user can't go back to login via browser back
-      // Normalize role name to avoid casing/spaces differences between
-      // environments (some backends return "Super Admin" vs "Super admin").
-      const rn = String(user.role_name ?? "")
-        .toLowerCase()
-        .trim();
-      if (rn.includes("super")) router.replace("/superadmin");
-      else if (rn.includes("admin")) router.replace("/admin");
-      else router.replace("/dashboard");
-    } catch (err: any) {
-      if (err?.response?.data?.errors) {
-        const serverErrors = err.response.data.errors;
-        const firstErrorKey = Object.keys(serverErrors)[0];
-        setError(serverErrors[firstErrorKey][0]);
-      } else {
-        setError(err instanceof Error ? err.message : "Login failed");
-      }
+    // ✅ ensure tokens & roles are loaded correctly before navigation
+    const auth = await import("@/lib/api/auth");
+    auth.loadTokens();
+
+    const token = auth.getAccessToken();
+    if (!token) {
+      router.replace("/login");
+      return;
     }
-  };
 
-  // This useEffect handles redirecting already-authenticated users.
+    try {
+      if (auth.isTokenExpired(token)) {
+        await auth.refreshAccessToken();
+        auth.loadTokens();
+      }
+
+      const role = auth.getRoleName();
+      const r = String(role ?? "").toLowerCase().replace(/[\s_-]/g, "");
+      if (r.includes("super")) router.replace("/superadmin");
+      else if (r.includes("admin")) router.replace("/admin");
+      else router.replace("/dashboard");
+    } catch {
+      router.replace("/login");
+    }
+  } catch (err: any) {
+    if (err?.response?.data?.errors) {
+      const serverErrors = err.response.data.errors;
+      const firstErrorKey = Object.keys(serverErrors)[0];
+      setError(serverErrors[firstErrorKey][0]);
+    } else {
+      setError(err instanceof Error ? err.message : "Login failed");
+    }
+  }
+};
+
+
+// This useEffect handles redirecting already-authenticated users.
   // It's crucial and its logic is preserved.
   useEffect(() => {
     let mounted = true;
@@ -237,27 +253,7 @@ export default function LoginPage() {
             </form>
           </Form>
 
-          {/* <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
           
-          <Button variant="outline" className="w-full" onClick={() => {}}>
-              Google
-          </Button>
-
-          <div className="mt-4 text-center text-sm">
-            Don't have an account?{" "}
-            <a href="#" className="underline">
-              Sign up
-            </a>
-          </div> */}
         </div>
       </div>
     </div>
