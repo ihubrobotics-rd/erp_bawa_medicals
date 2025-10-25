@@ -273,7 +273,7 @@ export const navigateToRoleOrLogin = async (
     // "super-admin" or small variations still route correctly.
     if (r.includes("super")) router.push("/super-admin");
     else if (r.includes("admin")) router.push("/admin");
-    else router.push("/dashboard");
+    else router.push("/super-admin");
   } catch (e) {
     router.push("/login");
   }
