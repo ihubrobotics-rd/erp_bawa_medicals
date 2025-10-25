@@ -264,11 +264,7 @@ export const navigateToRoleOrLogin = async (
     // This is the robust logic to handle "Super Admin", "super-admin", etc.
     const r = String(raw).toLowerCase().trim().replace(/[\s_-]/g, "");
 
-    // --- THIS IS THE MOST IMPORTANT PART FOR DEBUGGING ---
-    console.log("--- VERCEL ROLE DEBUG ---");
-    console.log("Raw role from getRoleName():", raw);
-    console.log("Normalized role for check:", r);
-    console.log("--- END VERCEL ROLE DEBUG ---");
+  
 
     if (r.includes("super")) {
       nav("/superadmin");
