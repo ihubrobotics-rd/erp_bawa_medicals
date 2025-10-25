@@ -9,8 +9,6 @@ import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PrivilegeProvider } from "@/providers/PrivilegeProvider";
-
-// ✅ Import a beautiful robot-like font with fallback support
 import { Orbitron, Roboto } from "next/font/google";
 
 const orbitron = Orbitron({
