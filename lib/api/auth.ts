@@ -145,7 +145,8 @@ api.interceptors.response.use(
         );
 
         const newAccess = data.access;
-        setTokens(newAccess, refreshToken);
+        // Pass the original refresh token to setTokens
+        setTokens(newAccess, refreshToken); 
         processQueue(null, newAccess);
 
         originalRequest.headers.Authorization = `Bearer ${newAccess}`;
@@ -178,7 +179,9 @@ export const getRoleId = () =>
   (typeof window !== "undefined" && localStorage.getItem("role")
     ? Number(localStorage.getItem("role"))
     : null);
-export const getRoleName = () => roleName ?? localStorage.getItem("role_name");
+export const getRoleName = () =>
+  roleName ??
+  (typeof window !== "undefined" ? localStorage.getItem("role_name") : null);
 export const getIsActive = () =>
   isActive ??
   (typeof window !== "undefined" &&
@@ -203,24 +206,6 @@ export const isTokenExpired = (token?: string | null) => {
   }
 };
 
-// export const refreshAccessToken = async (): Promise<string> => {
-//   const refresh = getRefreshToken();
-//   if (!refresh) throw new Error("No refresh token available");
-
-//   const { data } = await axios.post(
-//     `${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh/`,
-//     { refresh }
-//   );
-
-//   const newAccess = data.access ?? data.data?.access;
-//   if (!newAccess)
-//     throw new Error("Refresh endpoint did not return access token");
-
-//   // Preserve existing refresh token if backend doesn't return a new one
-//   setTokens(newAccess, refresh);
-//   return newAccess;
-// };
-
 export const refreshAccessToken = async (): Promise<string> => {
   const refresh = getRefreshToken();
   if (!refresh) throw new Error("No refresh token available");
@@ -231,23 +216,28 @@ export const refreshAccessToken = async (): Promise<string> => {
   );
 
   const newAccess = data.access ?? data.data?.access;
-  const newRefresh = data.refresh ?? refresh;
+  const newRefresh = data.refresh ?? refresh; // Use new refresh token if provided
   setTokens(newAccess, newRefresh);
 
   return newAccess;
 };
 
-// Navigate the user to the appropriate role landing page or to /login.
-// This centralizes the token presence/refresh check and avoids small UI flashes
-// caused by components doing naive router.push('/login') without checking tokens.
+// ==================================================================
+// ✅ NEW CENTRALIZED NAVIGATION FUNCTION
+// This is now the single source of truth for role-based routing.
+// ==================================================================
 export const navigateToRoleOrLogin = async (
-  router: { push: (p: string) => void } | any
+  // Use 'replace' to prevent users from clicking "back" to the login page
+  router: { replace: (p: string) => void } | any
 ) => {
+  // Use replace if available, otherwise fall back to push
+  const nav = router.replace ?? router.push;
+
   try {
     const token = getAccessToken();
 
     if (!token) {
-      router.push("/login");
+      nav("/login");
       return;
     }
 
@@ -256,25 +246,39 @@ export const navigateToRoleOrLogin = async (
         await refreshAccessToken();
       } catch (e) {
         // can't refresh -> go login
-        router.push("/login");
+        clearTokens(); // Make sure old bad tokens are gone
+        nav("/login");
         return;
       }
     }
 
+    // Reload tokens from localStorage *after* potential refresh
+    loadTokens(); 
     const raw = getRoleName();
+    
     if (!raw) {
-      router.push("/login");
+      nav("/login");
       return;
     }
 
-    const r = String(raw).toLowerCase().trim();
-    // Be permissive about role name formatting (case / spacing differences
-    // between environments). Prefer substring checks so "Super Admin",
-    // "super-admin" or small variations still route correctly.
-    if (r.includes("super")) router.push("/superadmin");
-    else if (r.includes("admin")) router.push("/admin");
-    else router.push("/dashboard");
+    // This is the robust logic to handle "Super Admin", "super-admin", etc.
+    const r = String(raw).toLowerCase().trim().replace(/[\s_-]/g, "");
+
+    // --- THIS IS THE MOST IMPORTANT PART FOR DEBUGGING ---
+    console.log("--- VERCEL ROLE DEBUG ---");
+    console.log("Raw role from getRoleName():", raw);
+    console.log("Normalized role for check:", r);
+    console.log("--- END VERCEL ROLE DEBUG ---");
+
+    if (r.includes("super")) {
+      nav("/superadmin");
+    } else if (r.includes("admin")) {
+      nav("/admin");
+    } else {
+      nav("/dashboard");
+    }
   } catch (e) {
-    router.push("/login");
+    console.error("Navigation failed:", e);
+    nav("/login");
   }
 };

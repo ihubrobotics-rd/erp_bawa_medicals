@@ -1,3 +1,4 @@
+// LoginPage.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -26,10 +27,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { loginSchema, type LoginFormData } from "@/utils/validation";
 import { Loader2, Eye, EyeOff, Terminal } from "lucide-react";
 import {
-  getAccessToken,
-  isTokenExpired,
-  refreshAccessToken,
-  getRoleName,
+  navigateToRoleOrLogin, // ✅ IMPORT THE CENTRAL FUNCTION
+  getAccessToken,       // ✅ Import for the initial check
 } from "@/lib/api/auth";
 
 export default function LoginPage() {
@@ -44,70 +43,53 @@ export default function LoginPage() {
     defaultValues: { username: "", password: "" },
   });
 
-const onSubmit = async (data: LoginFormData) => {
-  try {
-    setError("");
-    const user = await login(data.username, data.password);
-
-    // ✅ ensure tokens & roles are loaded correctly before navigation
-    const auth = await import("@/lib/api/auth");
-    auth.loadTokens();
-
-    const token = auth.getAccessToken();
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
+  // ✅ Simplified onSubmit handler
+  const onSubmit = async (data: LoginFormData) => {
     try {
-      if (auth.isTokenExpired(token)) {
-        await auth.refreshAccessToken();
-        auth.loadTokens();
+      setError("");
+      // 1. Log in
+      await login(data.username, data.password);
+      
+      // 2. Just call the central navigation function. It does the rest.
+      await navigateToRoleOrLogin(router);
+
+    } catch (err: any) {
+      // Your existing error handling is perfect
+      if (err?.response?.data?.errors) {
+        const serverErrors = err.response.data.errors;
+        const firstErrorKey = Object.keys(serverErrors)[0];
+        setError(serverErrors[firstErrorKey][0]);
+      } else {
+        setError(err instanceof Error ? err.message : "Login failed");
       }
-
-      const role = auth.getRoleName();
-      const r = String(role ?? "").toLowerCase().replace(/[\s_-]/g, "");
-      if (r.includes("super")) router.replace("/superadmin");
-      else if (r.includes("admin")) router.replace("/admin");
-      else router.replace("/dashboard");
-    } catch {
-      router.replace("/login");
     }
-  } catch (err: any) {
-    if (err?.response?.data?.errors) {
-      const serverErrors = err.response.data.errors;
-      const firstErrorKey = Object.keys(serverErrors)[0];
-      setError(serverErrors[firstErrorKey][0]);
-    } else {
-      setError(err instanceof Error ? err.message : "Login failed");
-    }
-  }
-};
+  };
 
 
-// This useEffect handles redirecting already-authenticated users.
-  // It's crucial and its logic is preserved.
+  // ✅ Simplified useEffect to check auth status and redirect if needed
   useEffect(() => {
     let mounted = true;
 
     const check = async () => {
       const token = getAccessToken();
-      if (!token) return;
 
-      if (isTokenExpired(token)) {
-        try {
-          await refreshAccessToken();
-        } catch (e) {
-          return;
-        }
+      if (!token) {
+        // No token, stop loading and show the login page
+        if (mounted) setCheckingAuth(false);
+        return;
       }
-      if (!mounted) return;
-      const role = String(getRoleName() ?? "")
-        .toLowerCase()
-        .trim();
-      if (role.includes("super")) router.replace("/superadmin");
-      else if (role.includes("admin")) router.replace("/admin");
-      else router.replace("/dashboard");
+
+      // We have a token. Let the central function
+      // handle refreshing (if needed) and redirecting.
+      try {
+        await navigateToRoleOrLogin(router);
+        // If navigation succeeds, this component will unmount,
+        // so no need to setCheckingAuth(false)
+      } catch (e) {
+        // If it fails, (e.g., refresh fails),
+        // stop loading and show the login page
+        if (mounted) setCheckingAuth(false);
+      }
     };
 
     check();
@@ -116,34 +98,8 @@ const onSubmit = async (data: LoginFormData) => {
       mounted = false;
     };
   }, [router]);
+  // We removed the second useEffect as this one now handles all logic.
 
-  // This useEffect handles the initial loading state to prevent UI flashing.
-  // Its logic is also preserved.
-  useEffect(() => {
-    let mounted = true;
-    const run = async () => {
-      const token = getAccessToken();
-      if (!token) {
-        if (mounted) setCheckingAuth(false);
-        return;
-      }
-      try {
-        if (isTokenExpired(token)) {
-          await refreshAccessToken();
-        }
-      } catch (e) {
-        if (mounted) setCheckingAuth(false);
-        return;
-      }
-      if (mounted) setCheckingAuth(false);
-    };
-
-    run();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   // Show a spinner while we check existing auth state
   if (checkingAuth) {
@@ -154,12 +110,13 @@ const onSubmit = async (data: LoginFormData) => {
     );
   }
 
+  // ... (Rest of your JSX is unchanged) ...
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
       {/* Left side: Branding/Image */}
       <div className="hidden bg-muted lg:flex flex-col items-center justify-center p-2 text-center ">
         <div className="bg-gradient-to-b from-orange-600 to-yellow-200 w-full h-full flex items-center justify-center rounded-lg">
-          <div className="max-w-md  ">
+          <div className="max-w-md  ">
             <h1 className="text-4xl font-bold tracking-tight text-white">
               Bawa Medicals
             </h1>
