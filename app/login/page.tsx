@@ -50,16 +50,14 @@ export default function LoginPage() {
       const user = await login(data.username, data.password);
 
       // Use replace so user can't go back to login via browser back
-      switch (user.role_name) {
-        case "Super admin":
-          router.replace("/super-admin");
-          break;
-        case "Admin":
-          router.replace("/admin");
-          break;
-        default:
-          router.replace("/dashboard");
-      }
+      // Normalize role name to avoid casing/spaces differences between
+      // environments (some backends return "Super Admin" vs "Super admin").
+      const rn = String(user.role_name ?? "")
+        .toLowerCase()
+        .trim();
+      if (rn.includes("super")) router.replace("/super-admin");
+      else if (rn.includes("admin")) router.replace("/admin");
+      else router.replace("/dashboard");
     } catch (err: any) {
       if (err?.response?.data?.errors) {
         const serverErrors = err.response.data.errors;
@@ -88,9 +86,11 @@ export default function LoginPage() {
         }
       }
       if (!mounted) return;
-      const role = getRoleName();
-      if (role === "Super admin") router.replace("/super-admin");
-      else if (role === "Admin") router.replace("/admin");
+      const role = String(getRoleName() ?? "")
+        .toLowerCase()
+        .trim();
+      if (role.includes("super")) router.replace("/super-admin");
+      else if (role.includes("admin")) router.replace("/admin");
       else router.replace("/dashboard");
     };
 
@@ -143,12 +143,11 @@ export default function LoginPage() {
       {/* Left side: Branding/Image */}
       <div className="hidden bg-muted lg:flex flex-col items-center justify-center p-2 text-center ">
         <div className="bg-gradient-to-b from-orange-600 to-yellow-200 w-full h-full flex items-center justify-center rounded-lg">
-        <div className="max-w-md  ">
+          <div className="max-w-md  ">
             <h1 className="text-4xl font-bold tracking-tight text-white">
               Bawa Medicals
             </h1>
-            
-        </div>
+          </div>
         </div>
       </div>
 
@@ -161,7 +160,7 @@ export default function LoginPage() {
               Enter your credentials to access your account
             </p>
           </div>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -235,7 +234,6 @@ export default function LoginPage() {
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign In
               </Button>
-
             </form>
           </Form>
 
