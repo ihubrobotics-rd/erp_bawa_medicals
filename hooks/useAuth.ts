@@ -16,48 +16,68 @@ type UserLike = any;
 export const useAuth = () => {
   const queryClient = useQueryClient();
 
-  const [user, setUser] = useState<UserLike | null>(
-    () => queryClient.getQueryData(["user"]) ?? null
+  // --- 💡 FIX 1: Initialize all state from the cache ---
+  // We run this logic once on mount to get the user from the RQ cache.
+  const [initialUser, setInitialUser] = useState<UserLike | null>(
+    () => (queryClient.getQueryData(["user"]) as UserLike) ?? null
   );
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Initialize client-only tokens + hydrate minimal user info.
+  const [user, setUser] = useState<UserLike | null>(initialUser);
+
+  // Initialize auth/loading state based on whether we found a user in the cache.
+  // This prevents the "flicker" on login redirect because `isLoading`
+  // will be `false` and `isAuthenticated` will be `true` on the *first render*
+  // of the new page.
+  const [isAuthenticated, setIsAuthenticated] =
+    useState<boolean>(!!initialUser);
+
+  // We are "loading" ONLY if we DON'T have a cached user.
+  // (e.g., on a hard page refresh, which is correct)
+  const [isLoading, setIsLoading] = useState<boolean>(!initialUser);
+  
+  // --- 💡 FIX 2: Refactor useEffect to always attach listener ---
   useEffect(() => {
     if (typeof window === "undefined") {
       setIsLoading(false);
       return;
     }
 
-    // load tokens into in-memory module state
-    loadTokens();
+    // This function hydrates state on a cold page load (e.g., F5 refresh)
+    const hydrateFromLocalStorage = () => {
+      // If we already have a user (from React Query cache), we're hydrated.
+      // We just need to ensure the state is correct.
+      if (initialUser) {
+        setUser(initialUser);
+        setIsLoading(false);
+        setIsAuthenticated(true);
+        return;
+      }
 
-    const cached = queryClient.getQueryData(["user"]);
-    if (cached) {
-      setUser(cached as UserLike);
-      setIsAuthenticated(true);
+      // No cached user, so check localStorage
+      loadTokens();
+      const token = getAccessToken();
+
+      if (token) {
+        // Build a minimal user object from stored role metadata
+        const minimal = {
+          role: getRoleId(),
+          role_name: getRoleName(),
+          name: getRoleName(),
+          permissions: [],
+        };
+        setUser(minimal);
+        setIsAuthenticated(true);
+      }
+
+      // Whether we found a token or not, we're done checking.
       setIsLoading(false);
-      return;
-    }
+    };
 
-    // If there's an access token but no cached user, build a minimal user
-    // object from stored role metadata so role-based UI can render before a
-    // full fetch completes.
-    const token = getAccessToken();
-    if (token) {
-      const minimal = {
-        role: getRoleId(),
-        role_name: getRoleName(),
-        name: getRoleName(),
-        permissions: [],
-      };
-      setUser(minimal);
-      setIsAuthenticated(true);
-    }
+    hydrateFromLocalStorage();
 
-    setIsLoading(false);
-
-    // Listen for manual auth changes (setTokens dispatches an `auth:changed` event)
+    // This listener reacts to auth changes *during* the session
+    // (e.g., login, logout, or token refresh in another tab)
+    // This was previously in a bugged state.
     const onAuthChanged = () => {
       const u = queryClient.getQueryData(["user"]) ?? null;
       setUser(u as UserLike | null);
@@ -70,7 +90,9 @@ export const useAuth = () => {
         "auth:changed",
         onAuthChanged as EventListener
       );
-  }, [queryClient]);
+
+    // initialUser is stable from useState, queryClient is stable
+  }, [queryClient, initialUser]);
 
   const loginMutation = useMutation({
     mutationFn: async ({
@@ -101,6 +123,7 @@ export const useAuth = () => {
       // update local state + ensure privileges refetch
       setUser(u as UserLike);
       setIsAuthenticated(true);
+      setIsLoading(false); // We are definitely not loading anymore
 
       const roleId = u?.role ?? null;
       if (roleId !== null && roleId !== undefined) {
@@ -153,6 +176,7 @@ export const useAuth = () => {
     login: (username: string, password: string) =>
       loginMutation.mutateAsync({ username, password }),
     logout,
+    // Ensure this reflects both the initial page load AND the mutation status
     isLoading: isLoading || loginMutation.status === "pending",
     isAuthenticated,
     hasPermission,
