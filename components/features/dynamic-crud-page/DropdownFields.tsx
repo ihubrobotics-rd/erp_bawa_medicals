@@ -101,7 +101,6 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
 
 // Static dropdown component - No changes needed here, but keeping it for completeness.
 export function StaticDropdown({ field, setValue, watch }) {
-  // ... (StaticDropdown code remains exactly the same as before)
   const currentValue = watch(field.input_name);
   let options = [];
   try {

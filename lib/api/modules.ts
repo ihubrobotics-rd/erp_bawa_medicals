@@ -41,10 +41,10 @@ export const deactivateSubmodule = async (id: number) => {
 };
 
 // == FUNCTIONALITIES API ==
-// ✨ --- CHANGED: Added a parameter type for more flexible queries ---
+// --- CHANGED: Added a parameter type for more flexible queries ---
 type GetFunctionalitiesParams = { search?: string; submodule?: number };
 
-// ✨ --- CHANGED: Updated function to accept a params object for filtering and searching ---
+// --- CHANGED: Updated function to accept a params object for filtering and searching ---
 export const getFunctionalities = async (params: GetFunctionalitiesParams): Promise<Functionality[]> => {
   // This will now generate a URL like: /module/functionalities/list/?submodule=2&search=some_text
   const { data } = await api.get("/module/functionalities/list/", { params });
@@ -67,11 +67,11 @@ export const deactivateFunctionality = async (id: number) => {
 
 
 // lib/api/privileges.ts
-
 // API to get the full list of modules
 export const getAllModules = async (): Promise<Module[]> => {
   const { data } = await api.get("/module/modules/list/");
-  return data.data.results || []; // Adjust based on your actual API response structure
+  return data.data.results || []; 
+  // Adjust based on your actual API response structure
 };
 
 // API to get the full list of submodules
@@ -85,3 +85,4 @@ export const getAllFunctionalities = async (): Promise<Functionality[]> => {
   const { data } = await api.get("/module/functionalities/list/");
   return data.data.results || [];
 };
+

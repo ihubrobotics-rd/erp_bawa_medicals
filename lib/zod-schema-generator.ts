@@ -1,3 +1,5 @@
+// lib/zod-schema-generator.ts
+
 import { z } from "zod";
 
 // Generates Zod schema dynamically based on field definitions
@@ -11,7 +13,9 @@ export const generateZodSchema = (functionDefinitions: any[]) => {
       case "number":
         validator = z.coerce.number({
           invalid_type_error: `${field.label} must be a number.`,
-        });
+        })
+        // --- ADD THIS LINE ---
+        .nonnegative({ message: `${field.label} cannot be negative.` });
         break;
 
       case "email":
@@ -65,7 +69,6 @@ export const generateZodSchema = (functionDefinitions: any[]) => {
         validator = validator.min(1, { message: `${field.label} is required.` });
       }
     } else {
-      // Allow the field to be optional (undefined) AND nullable
       validator = validator.optional().nullable();
     }
 
