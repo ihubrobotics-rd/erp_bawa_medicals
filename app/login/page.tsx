@@ -91,7 +91,7 @@ export default function LoginPage() {
         .trim();
       if (role.includes("super")) router.replace("/super-admin");
       else if (role.includes("admin")) router.replace("/admin");
-      else router.replace("/dashboard");
+      else router.replace("/super-admin");
     };
 
     check();
