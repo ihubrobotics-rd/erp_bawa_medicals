@@ -40,7 +40,7 @@ export function MedicalHeader() {
       }
 
       const role = getRoleName();
-      if (role === "Super admin") router.push("/super-admin");
+      if (role === "Super admin") router.push("/superadmin");
       else if (role === "Admin") router.push("/admin");
       else router.push("/dashboard");
     } catch (e) {

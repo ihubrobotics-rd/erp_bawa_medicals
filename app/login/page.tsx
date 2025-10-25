@@ -55,7 +55,7 @@ export default function LoginPage() {
       const rn = String(user.role_name ?? "")
         .toLowerCase()
         .trim();
-      if (rn.includes("super")) router.replace("/super-admin");
+      if (rn.includes("super")) router.replace("/superadmin");
       else if (rn.includes("admin")) router.replace("/admin");
       else router.replace("/dashboard");
     } catch (err: any) {
@@ -89,9 +89,9 @@ export default function LoginPage() {
       const role = String(getRoleName() ?? "")
         .toLowerCase()
         .trim();
-      if (role.includes("super")) router.replace("/super-admin");
+      if (role.includes("super")) router.replace("/superadmin");
       else if (role.includes("admin")) router.replace("/admin");
-      else router.replace("/super-admin");
+      else router.replace("/dashboard");
     };
 
     check();

@@ -271,9 +271,9 @@ export const navigateToRoleOrLogin = async (
     // Be permissive about role name formatting (case / spacing differences
     // between environments). Prefer substring checks so "Super Admin",
     // "super-admin" or small variations still route correctly.
-    if (r.includes("super")) router.push("/super-admin");
+    if (r.includes("super")) router.push("/superadmin");
     else if (r.includes("admin")) router.push("/admin");
-    else router.push("/super-admin");
+    else router.push("/dashboard");
   } catch (e) {
     router.push("/login");
   }
