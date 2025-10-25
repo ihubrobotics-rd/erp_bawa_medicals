@@ -27,8 +27,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { loginSchema, type LoginFormData } from "@/utils/validation";
 import { Loader2, Eye, EyeOff, Terminal } from "lucide-react";
 import {
-  navigateToRoleOrLogin, // ✅ IMPORT THE CENTRAL FUNCTION
-  getAccessToken,       // ✅ Import for the initial check
+  navigateToRoleOrLogin, 
+  getAccessToken,       
 } from "@/lib/api/auth";
 
 export default function LoginPage() {
