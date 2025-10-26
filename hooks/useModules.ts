@@ -2,8 +2,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api/modules";
 
-// == HOOK FOR MODULES ==
 
+// == HOOK FOR MODULES ==
 export const useModules = (search: string = "") => {
   const queryClient = useQueryClient();
 
@@ -42,7 +42,6 @@ export const useModules = (search: string = "") => {
 };
 
 // == HOOK FOR SUBMODULES & FUNCTIONALITIES ==
-// ... (No changes needed here)
 export const useSubmodules = (moduleId: number | null, search: string = "") => {
   const queryClient = useQueryClient();
 
@@ -93,8 +92,8 @@ export const useSubmodules = (moduleId: number | null, search: string = "") => {
   };
 };
 
-// == NEW HOOK FOR FUNCTIONALITIES ==
-// ✨ --- CHANGED: Updated hook to handle search functionality ---
+// NEW HOOK FOR FUNCTIONALITIES 
+// CHANGED: Updated hook to handle search functionality 
 export const useFunctionalities = (
   submoduleId: number | null,
   search: string = ""
@@ -108,7 +107,6 @@ export const useFunctionalities = (
     queryFn: () => api.getFunctionalities({ submodule: submoduleId!, search }),
     enabled: !!submoduleId,
   });
-
   const updateFunctionalityMutation = useMutation({
     mutationFn: ({
       id,
@@ -123,7 +121,6 @@ export const useFunctionalities = (
         queryKey: ["functionalities", submoduleId],
       }),
   });
-
   const deactivateFunctionalityMutation = useMutation({
     mutationFn: api.deactivateFunctionality,
     onSuccess: () =>
@@ -131,7 +128,6 @@ export const useFunctionalities = (
         queryKey: ["functionalities", submoduleId],
       }),
   });
-
   return {
     functionalitiesQuery,
     updateFunctionalityMutation,
@@ -139,7 +135,8 @@ export const useFunctionalities = (
   };
 };
 
-// == HOOK TO FETCH ALL ENTITIES WITHOUT FILTERS ==
+
+// HOOK TO FETCH ALL ENTITIES WITHOUT FILTERS
 export const useEntities = () => {
   const modulesQuery = useQuery({
     queryKey: ["allModules"],

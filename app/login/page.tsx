@@ -1,3 +1,4 @@
+// LoginPage.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -26,10 +27,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { loginSchema, type LoginFormData } from "@/utils/validation";
 import { Loader2, Eye, EyeOff, Terminal } from "lucide-react";
 import {
-  getAccessToken,
-  isTokenExpired,
-  refreshAccessToken,
-  getRoleName,
+  navigateToRoleOrLogin, 
+  getAccessToken,       
 } from "@/lib/api/auth";
 
 export default function LoginPage() {
@@ -44,23 +43,18 @@ export default function LoginPage() {
     defaultValues: { username: "", password: "" },
   });
 
+  // ✅ Simplified onSubmit handler
   const onSubmit = async (data: LoginFormData) => {
     try {
       setError("");
-      const user = await login(data.username, data.password);
+      // 1. Log in
+      await login(data.username, data.password);
+      
+      // 2. Just call the central navigation function. It does the rest.
+      await navigateToRoleOrLogin(router);
 
-      // Use replace so user can't go back to login via browser back
-      switch (user.role_name) {
-        case "Super admin":
-          router.replace("/super-admin");
-          break;
-        case "Admin":
-          router.replace("/admin");
-          break;
-        default:
-          router.replace("/dashboard");
-      }
     } catch (err: any) {
+      // Your existing error handling is perfect
       if (err?.response?.data?.errors) {
         const serverErrors = err.response.data.errors;
         const firstErrorKey = Object.keys(serverErrors)[0];
@@ -71,27 +65,31 @@ export default function LoginPage() {
     }
   };
 
-  // This useEffect handles redirecting already-authenticated users.
-  // It's crucial and its logic is preserved.
+
+  // ✅ Simplified useEffect to check auth status and redirect if needed
   useEffect(() => {
     let mounted = true;
 
     const check = async () => {
       const token = getAccessToken();
-      if (!token) return;
 
-      if (isTokenExpired(token)) {
-        try {
-          await refreshAccessToken();
-        } catch (e) {
-          return;
-        }
+      if (!token) {
+        // No token, stop loading and show the login page
+        if (mounted) setCheckingAuth(false);
+        return;
       }
-      if (!mounted) return;
-      const role = getRoleName();
-      if (role === "Super admin") router.replace("/super-admin");
-      else if (role === "Admin") router.replace("/admin");
-      else router.replace("/dashboard");
+
+      // We have a token. Let the central function
+      // handle refreshing (if needed) and redirecting.
+      try {
+        await navigateToRoleOrLogin(router);
+        // If navigation succeeds, this component will unmount,
+        // so no need to setCheckingAuth(false)
+      } catch (e) {
+        // If it fails, (e.g., refresh fails),
+        // stop loading and show the login page
+        if (mounted) setCheckingAuth(false);
+      }
     };
 
     check();
@@ -100,34 +98,8 @@ export default function LoginPage() {
       mounted = false;
     };
   }, [router]);
+  // We removed the second useEffect as this one now handles all logic.
 
-  // This useEffect handles the initial loading state to prevent UI flashing.
-  // Its logic is also preserved.
-  useEffect(() => {
-    let mounted = true;
-    const run = async () => {
-      const token = getAccessToken();
-      if (!token) {
-        if (mounted) setCheckingAuth(false);
-        return;
-      }
-      try {
-        if (isTokenExpired(token)) {
-          await refreshAccessToken();
-        }
-      } catch (e) {
-        if (mounted) setCheckingAuth(false);
-        return;
-      }
-      if (mounted) setCheckingAuth(false);
-    };
-
-    run();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   // Show a spinner while we check existing auth state
   if (checkingAuth) {
@@ -138,17 +110,17 @@ export default function LoginPage() {
     );
   }
 
+  // ... (Rest of your JSX is unchanged) ...
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
       {/* Left side: Branding/Image */}
       <div className="hidden bg-muted lg:flex flex-col items-center justify-center p-2 text-center ">
         <div className="bg-gradient-to-b from-orange-600 to-yellow-200 w-full h-full flex items-center justify-center rounded-lg">
-        <div className="max-w-md  ">
+          <div className="max-w-md  ">
             <h1 className="text-4xl font-bold tracking-tight text-white">
               Bawa Medicals
             </h1>
-            
-        </div>
+          </div>
         </div>
       </div>
 
@@ -161,7 +133,7 @@ export default function LoginPage() {
               Enter your credentials to access your account
             </p>
           </div>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -235,31 +207,10 @@ export default function LoginPage() {
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign In
               </Button>
-
             </form>
           </Form>
 
-          {/* <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
           
-          <Button variant="outline" className="w-full" onClick={() => {}}>
-              Google
-          </Button>
-
-          <div className="mt-4 text-center text-sm">
-            Don't have an account?{" "}
-            <a href="#" className="underline">
-              Sign up
-            </a>
-          </div> */}
         </div>
       </div>
     </div>

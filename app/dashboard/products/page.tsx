@@ -1,31 +1,42 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { usePermissions } from "@/hooks/usePermissions"
-import { ProductForm } from "@/components/forms/product-form"
-import { FormModal } from "@/components/modals/form-modal"
-import { DataTable } from "@/components/tables/data-table"
-import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/services/queries/products"
-import type { ProductFormData } from "@/utils/validation"
-import type { Product } from "@/types/entities"
-import { Plus, Package, Edit, Trash2 } from "lucide-react"
-import type { ColumnDef } from "@tanstack/react-table"
-import { formatCurrency } from "@/utils/formatters"
-import { useToast } from "@/hooks/use-toast"
+import { useState } from "react";
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { usePermissions } from "@/hooks/usePermissions";
+import { ProductForm } from "@/components/forms/product-form";
+import { FormModal } from "@/components/modals/form-modal";
+import { DataTable } from "@/components/tables/data-table";
+import {
+  useProducts,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+} from "@/services/queries/products";
+import type { ProductFormData } from "@/utils/validation";
+import type { Product } from "@/types/entities";
+import { Plus, Package, Edit, Trash2 } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { formatCurrency } from "@/utils/formatters";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProductsPage() {
-  const { canManageProducts } = usePermissions()
-  const { toast } = useToast()
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const { canManageProducts } = usePermissions();
+  const { toast } = useToast();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  const { data: products = [], isLoading, error } = useProducts()
-  const createProductMutation = useCreateProduct()
-  const updateProductMutation = useUpdateProduct()
-  const deleteProductMutation = useDeleteProduct()
+  const { data: products = [], isLoading, error } = useProducts();
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+  const deleteProductMutation = useDeleteProduct();
 
   if (!canManageProducts()) {
     return (
@@ -33,11 +44,13 @@ export default function ProductsPage() {
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <h2 className="text-2xl font-bold">Access Denied</h2>
-            <p className="text-muted-foreground">You don't have permission to view this page.</p>
+            <p className="text-muted-foreground">
+              You don't have permission to view this page.
+            </p>
           </div>
         </div>
       </DashboardLayout>
-    )
+    );
   }
 
   const columns: ColumnDef<Product>[] = [
@@ -68,7 +81,9 @@ export default function ProductsPage() {
       cell: ({ row }) => (
         <span
           className={`px-2 py-1 rounded-full text-xs ${
-            row.getValue("isActive") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+            row.getValue("isActive")
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
           }`}
         >
           {row.getValue("isActive") ? "Active" : "Inactive"}
@@ -84,8 +99,8 @@ export default function ProductsPage() {
             variant="outline"
             size="sm"
             onClick={() => {
-              setEditingProduct(row.original)
-              setIsModalOpen(true)
+              setEditingProduct(row.original);
+              setIsModalOpen(true);
             }}
           >
             <Edit className="h-4 w-4" />
@@ -101,49 +116,52 @@ export default function ProductsPage() {
         </div>
       ),
     },
-  ]
+  ];
 
   const handleSubmit = async (data: ProductFormData) => {
     try {
       if (editingProduct) {
-        await updateProductMutation.mutateAsync({ id: editingProduct.id, data })
+        await updateProductMutation.mutateAsync({
+          id: editingProduct.id,
+          data,
+        });
         toast({
           title: "Success",
           description: "Product updated successfully",
-        })
+        });
       } else {
-        await createProductMutation.mutateAsync(data)
+        await createProductMutation.mutateAsync(data);
         toast({
           title: "Success",
           description: "Product created successfully",
-        })
+        });
       }
-      setIsModalOpen(false)
-      setEditingProduct(null)
+      setIsModalOpen(false);
+      setEditingProduct(null);
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to save product",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteProductMutation.mutateAsync(id)
+      await deleteProductMutation.mutateAsync(id);
       toast({
         title: "Success",
         description: "Product deleted successfully",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to delete product",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   if (error) {
     return (
@@ -151,11 +169,13 @@ export default function ProductsPage() {
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <h2 className="text-2xl font-bold">Error</h2>
-            <p className="text-muted-foreground">Failed to load products. Please try again.</p>
+            <p className="text-muted-foreground">
+              Failed to load products. Please try again.
+            </p>
           </div>
         </div>
       </DashboardLayout>
-    )
+    );
   }
 
   return (
@@ -186,7 +206,12 @@ export default function ProductsPage() {
                 <div className="text-muted-foreground">Loading products...</div>
               </div>
             ) : (
-              <DataTable columns={columns} data={products} searchKey="name" searchPlaceholder="Search products..." />
+              <DataTable
+                columns={columns}
+                data={products}
+                searchKey="name"
+                searchPlaceholder="Search products..."
+              />
             )}
           </CardContent>
         </Card>
@@ -194,19 +219,21 @@ export default function ProductsPage() {
         <FormModal
           isOpen={isModalOpen}
           onClose={() => {
-            setIsModalOpen(false)
-            setEditingProduct(null)
+            setIsModalOpen(false);
+            setEditingProduct(null);
           }}
           title={editingProduct ? "Edit Product" : "Create New Product"}
         >
           <ProductForm
             initialData={editingProduct || undefined}
             onSubmit={handleSubmit}
-            isLoading={createProductMutation.isPending || updateProductMutation.isPending}
+            isLoading={
+              createProductMutation.isPending || updateProductMutation.isPending
+            }
             mode={editingProduct ? "edit" : "create"}
           />
         </FormModal>
       </div>
     </DashboardLayout>
-  )
+  );
 }

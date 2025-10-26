@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useMemo, Dispatch, SetStateAction } from 'react';
 import {
   ColumnDef,
@@ -46,12 +47,18 @@ type DataRow = {
 type DynamicTableProps = {
   // Data and state props
   data: DataRow[];
-  columns: { accessorKey: string; header: string }[];
+  columns: { 
+    accessorKey: string; 
+    header: string; 
+    cell?: ({ row }: any) => JSX.Element 
+  }[];
   isLoading: boolean;
   isError: boolean;
+  
   // State lifted to parent
   rowSelection: RowSelectionState;
   setRowSelection: Dispatch<SetStateAction<RowSelectionState>>;
+
   // Callbacks and configuration
   privileges: {
     can_edit: boolean;
@@ -110,7 +117,7 @@ export function DynamicTable({
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div>{row.getValue(col.accessorKey)}</div>,
+      cell: col.cell ? col.cell : ({ row }) => <div>{row.getValue(col.accessorKey)}</div>,
     })),
     {
       id: 'actions',
@@ -152,7 +159,6 @@ export function DynamicTable({
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    // onColumnVisibilityChange: setColumnVisibility, // REMOVED
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -169,7 +175,6 @@ export function DynamicTable({
 
   return (
     <div className="w-full space-y-4">
-      {/* --- MODIFIED TOOLBAR --- */}
       <div className="flex items-center justify-between">
         <Input
           placeholder={searchPlaceholder}
@@ -179,7 +184,6 @@ export function DynamicTable({
           }
           className="max-w-sm"
         />
-        {/* The "Columns" dropdown has been removed from here */}
         <div className="flex items-center gap-2">
             {toolbarActions}
         </div>

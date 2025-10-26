@@ -1,9 +1,11 @@
 'use client';
+
 import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { RowSelectionState } from "@tanstack/react-table";
 import { Trash2 } from "lucide-react";
+
 import api from "@/lib/api/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,11 +25,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { DynamicTable } from "./DynamicTable";
 import { DynamicForm } from "./DynamicForm"; // Assuming you have this component
 
 export function DynamicCrudPage({ schema }: { schema: any }) {
   const queryClient = useQueryClient();
+
   // Defensive schema parsing
   const privileges = schema?.role_privileges?.[0] || { can_add: false, can_edit: false, can_delete: false };
   const primarySubmodule = schema?.submodules?.[0] || schema?.functionalities?.[0] || null;
@@ -35,10 +39,42 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   const apiRoutes = primarySubmodule?.api_routes || { get_all: "", create: "", update: "", delete: "" };
   const formSchema = schema?.function_definitions || [];
 
-  const tableColumns = formSchema.map((field: any) => ({
-    accessorKey: field.input_name,
-    header: field.label,
-  }));
+  // --- MODIFIED LOGIC START ---
+  // Enhanced column generation with more robust boolean detection
+  const tableColumns = formSchema.map((field: any) => {
+    const columnDef: any = {
+      accessorKey: field.input_name,
+      header: field.label,
+    };
+
+    // This logic now correctly identifies radio buttons with null values as booleans
+    const isBooleanField = 
+      field.input_type === 'checkbox' || 
+      (field.input_type === 'radio' && (
+          field.values === null ||
+          field.values?.every((v: any) => typeof v.value === 'boolean' || v.value === 'true' || v.value === 'false')
+        )
+      );
+
+    if (isBooleanField) {
+      columnDef.cell = ({ row }: any) => {
+        const value = row.getValue(field.input_name);
+
+        if (value === null || value === undefined) {
+            return <Badge variant="outline">N/A</Badge>;
+        }
+        
+        return (
+          <Badge variant={value ? "default" : "secondary"}>
+            {value ? 'Yes' : 'No'}
+          </Badge>
+        );
+      };
+    }
+    
+    return columnDef;
+  });
+  // --- MODIFIED LOGIC END ---
 
   // State management
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -47,7 +83,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [itemsToDelete, setItemsToDelete] = useState<any[]>([]);
 
-  // Data fetching now lives in the parent component
+  // Data fetching
   const { data: tableData = [], isLoading, isError } = useQuery({
     queryKey: ['tableData', apiRoutes.get_all],
     queryFn: async () => {
@@ -55,7 +91,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       const response = await api.get(apiRoutes.get_all);
       return response.data.data.results || [];
     },
-    enabled: !!apiRoutes.get_all, // Only run query if the route exists
+    enabled: !!apiRoutes.get_all,
   });
 
   // Handlers

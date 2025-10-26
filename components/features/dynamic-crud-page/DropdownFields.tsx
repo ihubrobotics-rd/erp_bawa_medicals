@@ -14,7 +14,7 @@ const getOptionLabel = (option, field) => {
   if (option[specificNameKey]) {
     return option[specificNameKey];
   }
-  const fallbackKeys = ['name', 'label', 'title', 'state_name', 'country_name'];
+  const fallbackKeys = ['name', 'label', 'title', 'state_name', 'country_name','designation_name'];
   for (const key of fallbackKeys) {
     if (option[key]) return option[key];
   }
@@ -26,7 +26,6 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
   const currentValue = watch(field.input_name);
 
   // --- NEW LOGIC TO DETERMINE IF THE FIELD SHOULD BE DISABLED ---
-  // A field is a "target" if its input_name is used in another field's "mapping" property.
   const isTargetField = schema.some(
     (otherField) => otherField.mapping === field.input_name
   );
@@ -102,7 +101,6 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
 
 // Static dropdown component - No changes needed here, but keeping it for completeness.
 export function StaticDropdown({ field, setValue, watch }) {
-  // ... (StaticDropdown code remains exactly the same as before)
   const currentValue = watch(field.input_name);
   let options = [];
   try {

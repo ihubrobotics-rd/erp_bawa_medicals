@@ -1,3 +1,4 @@
+// MedicalHeader.tsx
 "use client";
 
 import { useState } from "react";
@@ -14,6 +15,8 @@ import {
 import { categories } from "@/data/catagories";
 import { useRouter } from "next/navigation";
 import { ModeToggle } from "../ui/ModeToggle";
+// ✅ IMPORT THE CENTRAL FUNCTION
+import { navigateToRoleOrLogin } from "@/lib/api/auth";
 
 const cities = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad"];
 
@@ -23,30 +26,14 @@ export function MedicalHeader() {
   const [location, setLocation] = useState("Mumbai");
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
+  // ✅ Simplified handleLogin function
   const handleLogin = async () => {
-    // if already authenticated, route to their role-specific landing page
-    const { getAccessToken, isTokenExpired, refreshAccessToken, getRoleName } =
-      await import("@/lib/api/auth");
-
-    const token = getAccessToken();
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      if (isTokenExpired(token)) {
-        await refreshAccessToken();
-      }
-
-      const role = getRoleName();
-      if (role === "Super admin") router.push("/super-admin");
-      else if (role === "Admin") router.push("/admin");
-      else router.push("/dashboard");
-    } catch (e) {
-      // failed refresh -> go to login
-      router.push("/login");
-    }
+    // This one function now handles everything:
+    // 1. Checks for a token.
+    // 2. If no token, routes to /login.
+    // 3. If token exists, refreshes if needed.
+    // 4. Routes to the correct dashboard based on role.
+    await navigateToRoleOrLogin(router);
   };
 
   return (

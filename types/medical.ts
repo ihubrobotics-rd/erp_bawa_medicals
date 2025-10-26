@@ -6,6 +6,8 @@ export type Role = {
   description?: string;
 };
 
+
+
 export type User = {
   id: number;
   username: string;
@@ -16,3 +18,4 @@ export type User = {
   is_active: boolean;
   created_at: string;
 };
+
