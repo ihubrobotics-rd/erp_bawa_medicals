@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox"; // CHANGED
 
 // Base type for permissions
 export type PrivilegeBase = {
@@ -27,10 +27,12 @@ export const PermissionSwitches = ({
       {(["can_view", "can_add", "can_edit", "can_delete"] as const).map(
         (key) => (
           <div key={key} className="flex items-center space-x-2 ">
-            <Switch
+            <Checkbox 
               id={`${key}-${entityId}`}
               checked={privileges[key]}
-              onCheckedChange={(value) => onUpdate(key, value)}
+              onCheckedChange={(value) => {
+                onUpdate(key, !!value); 
+              }}
               disabled={isLoading}
               className="cursor-pointer"
             />

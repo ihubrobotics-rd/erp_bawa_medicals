@@ -32,8 +32,7 @@ export const setTokens = (
     localStorage.setItem("is_active", String(user.is_active));
   // update in-memory copies immediately
   syncUserIntoMemory(user);
-  // notify the app that auth state changed so listeners (e.g. privilege loader)
-  // can re-read role/localStorage and re-run queries.
+
   if (typeof window !== "undefined") {
     try {
       window.dispatchEvent(new Event("auth:changed"));
@@ -44,11 +43,7 @@ export const setTokens = (
   }
 };
 
-// Keep module-level variables in sync so getters that read the in-memory
-// values immediately after setTokens() will see the updated data without
-// needing a round-trip to localStorage.
-// (This prevents a race where code reads getRoleId() immediately after
-// login before the next render.)
+
 const syncUserIntoMemory = (user?: {
   role?: number;
   role_name?: string;
@@ -86,9 +81,7 @@ export const loadTokens = () => {
   isActive = localStorage.getItem("is_active") === "true";
 };
 
-// Note: do NOT call loadTokens() at module evaluation time. Call it from
-// client entry points (for example inside a useEffect in hooks/useAuth.ts)
-// so we don't access localStorage during SSR.
+
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -222,10 +215,7 @@ export const refreshAccessToken = async (): Promise<string> => {
   return newAccess;
 };
 
-// ==================================================================
-// ✅ NEW CENTRALIZED NAVIGATION FUNCTION
-// This is now the single source of truth for role-based routing.
-// ==================================================================
+
 export const navigateToRoleOrLogin = async (
   // Use 'replace' to prevent users from clicking "back" to the login page
   router: { replace: (p: string) => void } | any

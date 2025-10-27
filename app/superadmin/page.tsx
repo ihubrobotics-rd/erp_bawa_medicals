@@ -158,11 +158,13 @@ export default function AdminDashboard() {
             <TabsContent value="reports" className="space-y-6">
               <ReportsSection />
             </TabsContent>
-
+            
             <TabsContent value="settings" className="space-y-6">
               <SystemSettings />
             </TabsContent>
+
           </Tabs>
+
         </div>
       </div>
     </ProtectedRoute>

@@ -155,7 +155,6 @@ export const ModuleAccordion = ({
                       />
                     ))}
                     <div className="text-center pt-2 space-x-4">
-                      {/* --- UPGRADED: Smart "Show More" / "Load More" Button --- */}
                       {(allSubmodulesForModule.length > currentVisibleCount ||
                         canLoadMoreData) && (
                         <Button

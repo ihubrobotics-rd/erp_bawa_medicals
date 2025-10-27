@@ -10,13 +10,8 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-// Button is no longer needed here for loading, but ModuleAccordion will use it.
 import { ModuleAccordion } from "./ModuleAccordion";
-
-// --- HOOKS ---
 import { usePrivileges } from "@/hooks/usePrivileges";
-
-// --- TYPES ---
 import type { Role } from "@/lib/api/roles";
 import type {
   SubmodulePrivilege,
@@ -200,7 +195,6 @@ export function PrivilegesPanel({
             isFunctionalityLoading={setFunctionalityPrivilegeMutation.isPending}
             isModuleLoading={setModulePrivilegeMutation.isPending}
             editMode={isEditMode}
-            // --- ADDED: Pass API fetching capabilities down ---
             hasNextPage={allPrivilegesQuery.hasNextPage}
             isFetchingNextPage={allPrivilegesQuery.isFetchingNextPage}
             fetchNextPage={() => allPrivilegesQuery.fetchNextPage()}
