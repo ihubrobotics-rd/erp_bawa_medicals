@@ -38,9 +38,7 @@ export default function ProductsPage() {
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
 
-  const hasAccess = canManageProducts();
-
-  if (!hasAccess) {
+  if (!canManageProducts()) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
