@@ -79,15 +79,11 @@ export default function LoginPage() {
         return;
       }
 
-      // We have a token. Let the central function
-      // handle refreshing (if needed) and redirecting.
       try {
         await navigateToRoleOrLogin(router);
-        // If navigation succeeds, this component will unmount,
-        // so no need to setCheckingAuth(false)
+        
       } catch (e) {
-        // If it fails, (e.g., refresh fails),
-        // stop loading and show the login page
+        
         if (mounted) setCheckingAuth(false);
       }
     };

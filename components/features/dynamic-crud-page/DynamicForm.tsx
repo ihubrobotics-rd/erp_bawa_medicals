@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import api from '@/lib/api/auth';
-import { generateZodSchema } from '@/lib/zod-schema-generator';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { DynamicDropdown, StaticDropdown } from './DropdownFields';
+import { useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import api from "@/lib/api/auth";
+import { generateZodSchema } from "@/lib/zod-schema-generator";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { DynamicDropdown, StaticDropdown } from "./DropdownFields";
 
 const defaultRadioOptions = [
-  { label: 'Yes', value: 'true' },
-  { label: 'No', value: 'false' },
+  { label: "Yes", value: "true" },
+  { label: "No", value: "false" },
 ];
 
 export function DynamicForm({
@@ -54,7 +54,7 @@ export function DynamicForm({
   const mutation = useMutation({
     mutationFn: async (formData: any) => {
       const endpoint = isEditMode
-        ? apiUpdateRoute.replace('<int:pk>', String(initialData.id))
+        ? apiUpdateRoute.replace("<int:pk>", String(initialData.id))
         : apiCreateRoute;
 
       const method = isEditMode ? api.put : api.post;
@@ -62,29 +62,34 @@ export function DynamicForm({
       return res.data;
     },
     onSuccess: (data) => {
-      toast.success(data?.message || (isEditMode ? 'Updated successfully!' : 'Created successfully!'));
-      queryClient.invalidateQueries({ queryKey: ['tableData', apiGetAllRoute] });
+      toast.success(
+        data?.message ||
+          (isEditMode ? "Updated successfully!" : "Created successfully!")
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["tableData", apiGetAllRoute],
+      });
       onClose();
     },
     onError: (error: any) => {
       const backendData = error?.response?.data || {};
-      const message = backendData?.message || 'An unexpected error occurred.';
+      const message = backendData?.message || "An unexpected error occurred.";
       const fieldErrors = backendData?.errors || {};
 
       const details = Object.entries(fieldErrors)
-        .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
-        .join('\n');
+        .map(([k, v]) => `${k}: ${(v as string[]).join(", ")}`)
+        .join("\n");
 
-      toast.error(`${message}${details ? '\n' + details : ''}`);
+      toast.error(`${message}${details ? "\n" + details : ""}`);
     },
   });
 
   const onSubmit = (data: any) => {
     const sanitizedData = { ...data };
     Object.keys(sanitizedData).forEach((key) => {
-      if (sanitizedData[key] === 'true') sanitizedData[key] = true;
-      else if (sanitizedData[key] === 'false') sanitizedData[key] = false;
-      if (sanitizedData[key] === '' || sanitizedData[key] === null) {
+      if (sanitizedData[key] === "true") sanitizedData[key] = true;
+      else if (sanitizedData[key] === "false") sanitizedData[key] = false;
+      if (sanitizedData[key] === "" || sanitizedData[key] === null) {
         delete sanitizedData[key];
       }
     });
@@ -92,16 +97,16 @@ export function DynamicForm({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="flex flex-col space-y-6"
-    >
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col space-y-6">
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
         {schema.map((field) => (
           // --- MODIFICATION 1: Added justify-between and h-full ---
           <div key={field.id} className="flex flex-col justify-between h-full">
-            <Label htmlFor={field.input_name} className="capitalize font-medium">
-              {field.label.replace(/_/g, ' ')}
+            <Label
+              htmlFor={field.input_name}
+              className="capitalize font-medium"
+            >
+              {field.label.replace(/_/g, " ")}
               {field.is_required && <span className="text-red-500">*</span>}
             </Label>
 
@@ -109,7 +114,7 @@ export function DynamicForm({
             <div>
               {/* Dynamic rendering of different input types */}
               {(() => {
-                if (field.input_type === 'checkbox') {
+                if (field.input_type === "checkbox") {
                   return (
                     <Controller
                       control={control}
@@ -127,8 +132,10 @@ export function DynamicForm({
                   );
                 }
 
-                if (field.input_type === 'radio') {
-                  const radioOptions = field.values?.length ? field.values : defaultRadioOptions;
+                if (field.input_type === "radio") {
+                  const radioOptions = field.values?.length
+                    ? field.values
+                    : defaultRadioOptions;
                   return (
                     <Controller
                       control={control}
@@ -140,7 +147,10 @@ export function DynamicForm({
                           className="flex flex-wrap gap-3 pt-2"
                         >
                           {radioOptions.map((option: any) => (
-                            <div key={option.value} className="flex items-center space-x-2">
+                            <div
+                              key={option.value}
+                              className="flex items-center space-x-2"
+                            >
                               <RadioGroupItem
                                 value={option.value}
                                 id={`${field.input_name}-${option.value}`}
@@ -170,7 +180,7 @@ export function DynamicForm({
                   );
                 }
 
-                if (field.values && field.input_type !== 'radio') {
+                if (field.values && field.input_type !== "radio") {
                   return (
                     <StaticDropdown
                       field={field}
@@ -183,12 +193,16 @@ export function DynamicForm({
                 return (
                   <Input
                     id={field.input_name}
-                    type={field.input_type || 'text'}
+                    type={field.input_type || "text"}
                     placeholder={field.placeholder}
                     {...register(field.input_name)}
-                    min={field.input_type === 'number' ? 0 : undefined}
+                    min={field.input_type === "number" ? 0 : undefined}
+                    step={field.input_type === "number" ? "any" : undefined}
                     onKeyDown={(e) => {
-                      if (field.input_type === 'number' && ['-', 'e', 'E'].includes(e.key)) {
+                      if (
+                        field.input_type === "number" &&
+                        ["e", "E"].includes(e.key)
+                      ) {
                         e.preventDefault();
                       }
                     }}
@@ -213,10 +227,10 @@ export function DynamicForm({
         </Button>
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending
-            ? 'Saving...'
+            ? "Saving..."
             : isEditMode
-            ? 'Update Changes'
-            : 'Save'}
+            ? "Update Changes"
+            : "Save"}
         </Button>
       </div>
     </form>

@@ -24,18 +24,13 @@ export const useAuth = () => {
 
   const [user, setUser] = useState<UserLike | null>(initialUser);
 
-  // Initialize auth/loading state based on whether we found a user in the cache.
-  // This prevents the "flicker" on login redirect because `isLoading`
-  // will be `false` and `isAuthenticated` will be `true` on the *first render*
-  // of the new page.
+
   const [isAuthenticated, setIsAuthenticated] =
     useState<boolean>(!!initialUser);
 
-  // We are "loading" ONLY if we DON'T have a cached user.
-  // (e.g., on a hard page refresh, which is correct)
+
   const [isLoading, setIsLoading] = useState<boolean>(!initialUser);
   
-  // --- 💡 FIX 2: Refactor useEffect to always attach listener ---
   useEffect(() => {
     if (typeof window === "undefined") {
       setIsLoading(false);
@@ -75,9 +70,7 @@ export const useAuth = () => {
 
     hydrateFromLocalStorage();
 
-    // This listener reacts to auth changes *during* the session
-    // (e.g., login, logout, or token refresh in another tab)
-    // This was previously in a bugged state.
+   
     const onAuthChanged = () => {
       const u = queryClient.getQueryData(["user"]) ?? null;
       setUser(u as UserLike | null);
@@ -176,7 +169,6 @@ export const useAuth = () => {
     login: (username: string, password: string) =>
       loginMutation.mutateAsync({ username, password }),
     logout,
-    // Ensure this reflects both the initial page load AND the mutation status
     isLoading: isLoading || loginMutation.status === "pending",
     isAuthenticated,
     hasPermission,
