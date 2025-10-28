@@ -79,6 +79,13 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
   if (isLoading) return <p className="text-sm text-muted-foreground mt-2">Loading {field.label}...</p>;
   if (isError) return <p className="text-sm text-red-500 mt-2">Failed to load {field.label}</p>;
 
+    if (!options.length)
+    return (
+      <p className="text-sm text-muted-foreground mt-2">
+        No {field.label} data available
+      </p>
+    );
+
   return (
     <Select
       onValueChange={handleValueChange}
