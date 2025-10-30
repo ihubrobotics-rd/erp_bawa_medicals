@@ -173,16 +173,7 @@ export const ModuleAccordion = ({
                         </Button>
                       )}
 
-                      {/* Show Less only if user has expanded beyond the initial count
-  {currentVisibleCount > INITIAL_VISIBLE_SUBMODULES && (
-    <Button
-      variant="link"
-      className="h-auto p-1 text-muted-foreground"
-      onClick={() => handleShowLess(moduleId)}
-    >
-      Show Less
-    </Button>
-  )} */}
+  
                     </div>
                   </>
                 ) : (

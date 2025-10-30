@@ -94,7 +94,7 @@ export function PrivilegesPanel({
       functionalitiesBySubmodule,
     };
   }, [allPrivilegesQuery.data]);
-
+  
   // Event handlers remain the same...
   const handleSubmodulePrivilegeUpdate = (
     privilege: SubmodulePrivilege,
