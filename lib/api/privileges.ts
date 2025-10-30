@@ -17,7 +17,6 @@ export const getPrivilegesForRole = async (
   const { data } = await api.get(`/Privilege/role/privileges/${roleId}/`, {
     params: { page },
   });
-  // The API response nests the actual data under a 'data' key
   return data.data;
 };
 
@@ -41,8 +40,6 @@ export const setSubmodulePrivilege = async (
     "/Privilege/submodule/privileges/create/",
     payload
   );
-  // Assuming the POST response also nests the result in a 'data' object.
-  // If your API returns the object directly at the root, change this to `return data;`
   return data.data as SubmodulePrivilege;
 };
 

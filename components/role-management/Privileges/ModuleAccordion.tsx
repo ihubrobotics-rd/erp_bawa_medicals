@@ -154,10 +154,10 @@ export const ModuleAccordion = ({
                         isFunctionalityLoading={isFunctionalityLoading}
                       />
                     ))}
+                    {/* Show More / Show Less Controls */}
                     <div className="text-center pt-2 space-x-4">
-                      {/* --- UPGRADED: Smart "Show More" / "Load More" Button --- */}
-                      {(allSubmodulesForModule.length > currentVisibleCount ||
-                        canLoadMoreData) && (
+                      {/* Show More button only if we still have more submodules to display */}
+                      {currentVisibleCount < allSubmodulesForModule.length && (
                         <Button
                           variant="link"
                           className="h-auto p-1"
@@ -172,15 +172,8 @@ export const ModuleAccordion = ({
                           {isFetchingNextPage ? "Loading..." : "Show More"}
                         </Button>
                       )}
-                      {currentVisibleCount > INITIAL_VISIBLE_SUBMODULES && (
-                        <Button
-                          variant="link"
-                          className="h-auto p-1 text-muted-foreground"
-                          onClick={() => handleShowLess(moduleId)}
-                        >
-                          Show Less
-                        </Button>
-                      )}
+
+  
                     </div>
                   </>
                 ) : (

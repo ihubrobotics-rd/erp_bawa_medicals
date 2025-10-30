@@ -3,42 +3,29 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-// --- CHILD COMPONENTS ---
 import { RoleList } from "./RoleList";
 import { PrivilegesPanel } from "./Privileges/PrivilegesPanel";
 import { CreateRoleDialog } from "./RoleDialogs/CreateRoleDialog";
 import { EditRoleDialog } from "./RoleDialogs/EditRoleDialog";
 import { DeactivateRoleDialog } from "./RoleDialogs/DeactivateRoleDialog";
-
-// --- HOOKS ---
 import { useRoles } from "@/hooks/useRoles";
-
-// --- TYPES ---
 import type { Role } from "@/lib/api/roles";
 
 export function RoleManagement() {
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
-
-  // Dialog states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeactivateAlertOpen, setIsDeactivateAlertOpen] = useState(false);
-  
-  // State for which role is being acted upon
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [roleToDeactivate, setRoleToDeactivate] = useState<Role | null>(null);
-
   const {
     rolesQuery,
     createRoleMutation,
     updateRoleMutation,
     deactivateRoleMutation,
   } = useRoles();
-
   const roles: Role[] = rolesQuery.data || [];
 
-  // --- HANDLERS FOR DIALOGS ---
   const handleCreateRole = async (data: Omit<Role, 'id'>) => {
     await createRoleMutation.mutateAsync(data);
     setIsCreateOpen(false);
@@ -121,7 +108,11 @@ export function RoleManagement() {
           />
         </div>
 
-        <PrivilegesPanel selectedRoleId={selectedRoleId} roles={roles} />
+        <PrivilegesPanel 
+          selectedRoleId={selectedRoleId} 
+          roles={roles} 
+        />
+        
       </div>
     </div>
   );

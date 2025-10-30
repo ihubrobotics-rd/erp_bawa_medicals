@@ -1,5 +1,5 @@
 // app/(protected)/layout.tsx
-import { SuperAdminHeader } from "@/components/layout/super-admin-header"; 
+import { SuperAdminHeader } from "@/components/layout/All-Privilege-Header/index"; 
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
