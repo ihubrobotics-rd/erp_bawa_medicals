@@ -14,7 +14,7 @@ const getOptionLabel = (option, field) => {
   if (option[specificNameKey]) {
     return option[specificNameKey];
   }
-  const fallbackKeys = ['name', 'label', 'title', 'state_name', 'country_name','designation_name'];
+  const fallbackKeys = ['name', 'label', 'title', 'state_name', 'country_name','designation_name','code','transport_type','currency_code'];
   for (const key of fallbackKeys) {
     if (option[key]) return option[key];
   }
@@ -79,11 +79,18 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
   if (isLoading) return <p className="text-sm text-muted-foreground mt-2">Loading {field.label}...</p>;
   if (isError) return <p className="text-sm text-red-500 mt-2">Failed to load {field.label}</p>;
 
+    if (!options.length)
+    return (
+      <p className="text-sm text-muted-foreground mt-2">
+        No {field.label} data available
+      </p>
+    );
+
   return (
     <Select
       onValueChange={handleValueChange}
       value={currentValue ? currentValue.toString() : ''}
-      disabled={isDisabled} // <-- APPLY THE DISABLED STATE
+      disabled={isDisabled} 
     >
       <SelectTrigger className="mt-2">
         <SelectValue placeholder={`Select ${field.label}`} />

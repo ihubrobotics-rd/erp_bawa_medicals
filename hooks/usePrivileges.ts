@@ -87,7 +87,6 @@ export const usePrivileges = (roleId: number | null) => {
     mutationFn: (payload: FunctionalityPrivilegePayload) =>
       api.setFunctionalityPrivilege(payload),
     onSuccess: () => {
-      // Invalidate BOTH queries
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: navbarQueryKey });
     },

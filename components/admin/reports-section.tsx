@@ -47,7 +47,6 @@ export function ReportsSection() {
 
   const handleDownloadReport = (reportType: string) => {
     console.log("Downloading report:", reportType, "for period:", selectedPeriod)
-    // TODO: Implement report download
   }
 
   return (
