@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useMemo, Dispatch, SetStateAction } from 'react';
+import React, { useMemo, Dispatch, SetStateAction } from "react";
 import {
   ColumnDef,
   RowSelectionState,
@@ -12,14 +12,8 @@ import {
   useReactTable,
   SortingState,
   ColumnFiltersState,
-} from '@tanstack/react-table';
-import {
-  ArrowUpDown,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-} from 'lucide-react';
-
+} from "@tanstack/react-table";
+import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -27,21 +21,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 
-type DataRow = {
-  [key: string]: any;
-};
+type DataRow = Record<string, any>;
 
 type DynamicTableProps = {
   data: DataRow[];
@@ -52,13 +44,12 @@ type DynamicTableProps = {
   }[];
   isLoading: boolean;
   isError: boolean;
-
   rowSelection: RowSelectionState;
   setRowSelection: Dispatch<SetStateAction<RowSelectionState>>;
-
   privileges: {
     can_edit: boolean;
     can_delete: boolean;
+    can_add?: boolean;
   };
   onEdit: (row: DataRow) => void;
   onDelete: (row: DataRow) => void;
@@ -76,16 +67,19 @@ export function DynamicTable({
   privileges,
   onEdit,
   onDelete,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = "Search...",
   toolbarActions,
 }: DynamicTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
+  // 🧠 Build columns dynamically
   const columns = useMemo<ColumnDef<DataRow>[]>(() => {
+    if (!Array.isArray(initialColumns) || initialColumns.length === 0) return [];
+
     const baseColumns: ColumnDef<DataRow>[] = [
       {
-        id: 'select',
+        id: "select",
         header: ({ table }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
@@ -108,22 +102,32 @@ export function DynamicTable({
         header: ({ column }) => (
           <Button
             variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             {col.header}
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
-        cell: col.cell
-          ? col.cell
-          : ({ row }) => <div>{row.getValue(col.accessorKey)}</div>,
+        cell:
+          col.cell ??
+          (({ row }: any) => {
+            const value = row.getValue(col.accessorKey);
+            const nameField = `${col.accessorKey}_name`;
+            if (row.original && row.original[nameField]) {
+              return <div>{row.original[nameField]}</div>;
+            }
+            if (value === null || value === undefined || value === "") {
+              return <div className="text-muted">-</div>;
+            }
+            return <div>{String(value)}</div>;
+          }),
       })),
     ];
 
-    // ✅ Only add the Actions column if user has edit or delete privilege
+    // 🔧 Add Actions column if privileges allow
     if (privileges.can_edit || privileges.can_delete) {
       baseColumns.push({
-        id: 'actions',
+        id: "actions",
         header: () => <div className="text-right">Actions</div>,
         cell: ({ row }) => (
           <div className="text-right">
@@ -161,7 +165,7 @@ export function DynamicTable({
   }, [initialColumns, privileges, onEdit, onDelete]);
 
   const table = useReactTable({
-    data: data ?? [],
+    data: Array.isArray(data) ? data : [],
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -177,31 +181,46 @@ export function DynamicTable({
     },
   });
 
-  if (isError)
+  // ❌ Error handling
+  if (isError) {
+    return <div className="p-4 text-center text-red-500">Error loading data.</div>;
+  }
+
+  // ⚠️ Schema not ready
+  if (!initialColumns || initialColumns.length === 0) {
     return (
-      <div className="p-4 text-center text-red-500">Error loading data.</div>
+      <div className="p-6 text-center text-gray-500">
+        No schema available to display table.
+      </div>
     );
+  }
+
+  const hasRows = table.getRowModel().rows.length > 0;
 
   return (
     <div className="w-full space-y-4">
+      {/* 🔍 Search bar + toolbar */}
       <div className="flex items-center justify-between">
-        <Input
-          placeholder={searchPlaceholder}
-          value={
-            (table
-              .getColumn(initialColumns[0]?.accessorKey)
-              ?.getFilterValue() as string) ?? ''
-          }
-          onChange={(event) =>
-            table
-              .getColumn(initialColumns[0]?.accessorKey)
-              ?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
+        {initialColumns?.[0]?.accessorKey && (
+          <Input
+            placeholder={searchPlaceholder}
+            value={
+              (table
+                .getColumn(initialColumns[0].accessorKey)
+                ?.getFilterValue() as string) ?? ""
+            }
+            onChange={(event) =>
+              table
+                .getColumn(initialColumns[0].accessorKey)
+                ?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm"
+          />
+        )}
         <div className="flex items-center gap-2">{toolbarActions}</div>
       </div>
 
+      {/* 🧱 Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -220,9 +239,10 @@ export function DynamicTable({
               </TableRow>
             ))}
           </TableHeader>
+
           <TableBody>
             {isLoading ? (
-              Array.from({ length: 10 }).map((_, i) => (
+              Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
                   {columns.map((_, j) => (
                     <TableCell key={j}>
@@ -231,11 +251,11 @@ export function DynamicTable({
                   ))}
                 </TableRow>
               ))
-            ) : table.getRowModel().rows?.length ? (
+            ) : hasRows ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
+                  data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -245,12 +265,13 @@ export function DynamicTable({
                 </TableRow>
               ))
             ) : (
+              // ✅ Show empty table with headers and no rows
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center text-gray-500"
                 >
-                  No results.
+                  No data available. {privileges.can_add ? "Click Add to create new entry." : ""}
                 </TableCell>
               </TableRow>
             )}
@@ -258,9 +279,10 @@ export function DynamicTable({
         </Table>
       </div>
 
+      {/* 📄 Pagination */}
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{' '}
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         <div className="flex items-center space-x-2">
@@ -273,7 +295,7 @@ export function DynamicTable({
             Previous
           </Button>
           <span className="text-sm">
-            Page {table.getState().pagination.pageIndex + 1} of{' '}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </span>
           <Button
