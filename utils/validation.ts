@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { UserRole } from "@/types/roles";
 
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -6,7 +7,6 @@ export const loginSchema = z.object({
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
-
 
 export const employeeSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -20,7 +20,6 @@ export const employeeSchema = z.object({
 
 export type EmployeeFormData = z.infer<typeof employeeSchema>;
 
-
 export const customerSchema = z.object({
   name: z.string().min(1, "Customer name is required"),
   email: z.string().email("Invalid email address"),
@@ -30,7 +29,6 @@ export const customerSchema = z.object({
 });
 
 export type CustomerFormData = z.infer<typeof customerSchema>;
-
 
 export const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -43,3 +41,17 @@ export const productSchema = z.object({
 
 export type ProductFormData = z.infer<typeof productSchema>;
 
+export const userSchema = z
+  .object({
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    email: z.string().email("Invalid email address"),
+    role: z.nativeEnum(UserRole),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+export type UserFormData = z.infer<typeof userSchema>;
