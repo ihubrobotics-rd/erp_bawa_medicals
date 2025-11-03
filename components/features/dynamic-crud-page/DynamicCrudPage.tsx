@@ -68,7 +68,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
 
   // ⚙️ Build columns dynamically based on API data and schema
   const tableColumns = useMemo(() => {
-    // ... (This useMemo block is unchanged)
     if (!tableData.length && !formSchema.length) return [];
 
     const firstRow = tableData[0] || {};
@@ -76,37 +75,64 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       formSchema.map((f: any) => [f.input_name, f.label])
     );
 
-    const generatedCols = Object.keys(firstRow)
+const generatedCols = Object.keys(firstRow)
       .filter((key) => key !== "id")
       .map((key) => {
         const label =
           schemaMap[key] ||
-          schemaMap[key.replace("_name", "")] ||
-          key.replace(/_/g, " ");
+          schemaMap[key.replace("", "")] ||
+          key.replace("", " ");
 
         return {
           accessorKey: key,
           header: label,
-          cell: ({ row }: any) => {
-            const value = row.getValue(key);
-            if (typeof value === "boolean") {
-              return (
-                <Badge variant={value ? "default" : "secondary"}>
-                  {value ? "Yes" : "No"}
-                </Badge>
-              );
-            }
-            if (value === null || value === undefined || value === "") {
-              return <Badge variant="outline">N/A</Badge>;
-            }
-            return <div>{String(value)}</div>;
-          },
+    cell: ({ row }: any) => {
+  const value = row.getValue(key);
+
+  // ✅ Handle boolean fields
+  if (typeof value === "boolean") {
+    return (
+      <Badge variant={value ? "default" : "secondary"}>
+        {value ? "Yes" : "No"}
+      </Badge>
+    );
+  }
+
+  // 🚫 Handle empty/null values
+  if (value === null || value === undefined || value === "") {
+    return <Badge variant="outline">N/A</Badge>;
+  }
+
+  // 📅 Handle date/time fields like created_at or updated_at
+  if (
+    key.toLowerCase().includes("date") ||
+    key.toLowerCase().includes("created_at") ||
+    key.toLowerCase().includes("updated_at")
+  ) {
+    try {
+      const formatted = new Date(value).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+      return <div>{formatted}</div>;
+    } catch {
+      return <div>{String(value)}</div>;
+    }
+  }
+
+  // 🧾 Default case
+  return <div>{String(value)}</div>;
+},
+
         };
       });
 
     return generatedCols;
   }, [tableData, formSchema]);
-
   // 🧾 Handlers (wrapped in useCallback)
   const handleAddNew = useCallback(() => {
     setEditingItem(null);
@@ -134,9 +160,8 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     }
   }, [rowSelection, tableData]);
 
-  // ❌ Delete Mutation
+  // Delete Mutation
   const deleteMutation = useMutation({
-    // ... (This mutation is unchanged)
     mutationFn: async (ids: number[]) => {
       const deletePromises = ids.map((id) => {
         const deleteUrl = apiRoutes.delete.replace("<int:pk>", String(id));
