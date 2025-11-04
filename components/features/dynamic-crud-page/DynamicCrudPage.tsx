@@ -1,24 +1,26 @@
-"use client";
+// @/components/features/dynamic-crud-page/DynamicCrudPage.tsx
+
+'use client';
 
 import React, {
   useEffect,
   useMemo,
   useState,
   useCallback,
-} from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { RowSelectionState } from "@tanstack/react-table";
-import { Trash2, Pencil } from "lucide-react"; // 👈 Import Pencil
-import api from "@/lib/api/auth";
-import { Button } from "@/components/ui/button";
+} from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { RowSelectionState } from '@tanstack/react-table';
+import { Trash2, Pencil } from 'lucide-react';
+import api from '@/lib/api/auth';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,10 +30,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { DynamicTable } from "./DynamicTable";
-import { DynamicForm } from "./DynamicForm";
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { DynamicTable } from './DynamicTable';
+import { DynamicForm } from './DynamicForm';
 
 export function DynamicCrudPage({ schema }: { schema: any }) {
   const queryClient = useQueryClient();
@@ -42,8 +44,13 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       can_edit: false,
       can_delete: false,
     };
-  const submodule = schema?.submodules?.[0] || null;
-  const apiRoutes = submodule?.api_routes || {};
+
+  // 👈 CHANGED: Check for submodules OR functionalities
+  const entityData =
+    schema?.submodules?.[0] || schema?.functionalities?.[0] || null;
+
+  // 👈 CHANGED: Use the new 'entityData' variable
+  const apiRoutes = entityData?.api_routes || {};
   const formSchema = schema?.function_definitions || [];
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -58,7 +65,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["tableData", apiRoutes.get_all],
+    queryKey: ['tableData', apiRoutes.get_all],
     queryFn: async () => {
       const res = await api.get(apiRoutes.get_all);
       return res.data.data.results || [];
@@ -75,57 +82,58 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       formSchema.map((f: any) => [f.input_name, f.label])
     );
 
-const generatedCols = Object.keys(firstRow)
-      .filter((key) => key !== "id")
+    const generatedCols = Object.keys(firstRow)
+      .filter((key) => key !== 'id')
       .map((key) => {
         const label =
           schemaMap[key] ||
-          schemaMap[key.replace("", "")] ||
-          key.replace("", " ");
+          schemaMap[key.replace('', '')] ||
+          key.replace('', ' ');
 
         return {
           accessorKey: key,
           header: label,
-    cell: ({ row }: any) => {
-  const value = row.getValue(key);
+          cell: ({ row }: any) => {
+            const value = row.getValue(key);
 
-  // Handle boolean fields
-  if (typeof value === "boolean") {
-    return (
-      <Badge variant={value ? "default" : "secondary"}>
-        {value ? "Yes" : "No"}
-      </Badge>
-    );
-  }
-  if (value === null || value === undefined || value === "") {
-    return <Badge variant="outline">N/A</Badge>;
-  }
-  if (
-    key.toLowerCase().includes("date") ||
-    key.toLowerCase().includes("created_at") ||
-    key.toLowerCase().includes("updated_at")
-  ) {
-    try {
-      const formatted = new Date(value).toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
+            // Handle boolean fields
+            if (typeof value === 'boolean') {
+              return (
+                <Badge variant={value ? 'default' : 'secondary'}>
+                  {value ? 'Yes' : 'No'}
+                </Badge>
+              );
+            }
+            if (value === null || value === undefined || value === '') {
+              return <Badge variant="outline">N/A</Badge>;
+            }
+            if (
+              key.toLowerCase().includes('date') ||
+              key.toLowerCase().includes('created_at') ||
+              key.toLowerCase().includes('updated_at')
+            ) {
+              try {
+                const formatted = new Date(value).toLocaleString('en-IN', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true,
+                });
+                return <div>{formatted}</div>;
+              } catch {
+                return <div>{String(value)}</div>;
+              }
+            }
+            return <div>{String(value)}</div>;
+          },
+        };
       });
-      return <div>{formatted}</div>;
-    } catch {
-      return <div>{String(value)}</div>;
-    }
-  }
-      return <div>{String(value)}</div>;
-    },
-      };
-  });
 
     return generatedCols;
   }, [tableData, formSchema]);
+
   //  Handlers (wrapped in useCallback)
   const handleAddNew = useCallback(() => {
     setEditingItem(null);
@@ -156,8 +164,12 @@ const generatedCols = Object.keys(firstRow)
   // Delete Mutation
   const deleteMutation = useMutation({
     mutationFn: async (ids: number[]) => {
+      // 👈 CHANGED: Check if apiRoutes.delete exists
+      if (!apiRoutes.delete) {
+        throw new Error('Delete API route is not defined.');
+      }
       const deletePromises = ids.map((id) => {
-        const deleteUrl = apiRoutes.delete.replace("<int:pk>", String(id));
+        const deleteUrl = apiRoutes.delete.replace('<int:pk>', String(id));
         return api.delete(deleteUrl);
       });
       return Promise.all(deletePromises);
@@ -165,13 +177,13 @@ const generatedCols = Object.keys(firstRow)
     onSuccess: (_, vars) => {
       toast.success(`${vars.length} item(s) deleted successfully`);
       queryClient.invalidateQueries({
-        queryKey: ["tableData", apiRoutes.get_all],
+        queryKey: ['tableData', apiRoutes.get_all],
       });
       setItemsToDelete([]);
       setRowSelection({});
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || "Failed to delete items.");
+      toast.error(err?.response?.data?.message || 'Failed to delete items.');
       setItemsToDelete([]);
     },
   });
@@ -186,7 +198,6 @@ const generatedCols = Object.keys(firstRow)
 
   const numSelected = Object.keys(rowSelection).length;
 
-  // 👈 Get the single selected item (if only one is selected)
   const selectedItem = useMemo(() => {
     const selectedIndexes = Object.keys(rowSelection).map(Number);
     if (selectedIndexes.length !== 1) {
@@ -209,14 +220,12 @@ const generatedCols = Object.keys(firstRow)
         </Button>
       )}
 
-      {/* EXISTING DELETE BUTTON (shows when 1 or more items are selected) */}
       {numSelected > 0 && privileges.can_delete && (
         <Button variant="destructive" size="sm" onClick={handleBulkDeleteClick}>
           <Trash2 className="mr-2 h-4 w-4" /> Delete ({numSelected})
         </Button>
       )}
 
-      {/* EXISTING ADD NEW BUTTON */}
       {privileges.can_add && (
         <Button size="sm" onClick={handleAddNew}>
           Add New
@@ -228,8 +237,9 @@ const generatedCols = Object.keys(firstRow)
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="flex justify-between items-center mb-6">
+        {/* 👈 CHANGED: Use entityData.name for the title */}
         <h1 className="text-3xl font-bold capitalize">
-          {submodule?.name || "Data"} Management
+          {entityData?.name || 'Data'} Management
         </h1>
       </div>
 
@@ -244,29 +254,31 @@ const generatedCols = Object.keys(firstRow)
         rowSelection={rowSelection}
         setRowSelection={setRowSelection}
         toolbarActions={toolbarActions}
+        // 👈 CHANGED: Use entityData.name for the placeholder
         searchPlaceholder={`Search ${
-          submodule?.name?.toLowerCase() || "items"
+          entityData?.name?.toLowerCase() || 'items'
         }...`}
       />
 
-      {/* FORM DIALOG (unchanged) */}
+      {/* FORM DIALOG */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
+            {/* 👈 CHANGED: Use entityData.name for dialog titles */}
             <DialogTitle className="capitalize">
               {editingItem
-                ? `Edit ${submodule?.name}`
-                : `Add New ${submodule?.name}`}
+                ? `Edit ${entityData?.name}`
+                : `Add New ${entityData?.name}`}
             </DialogTitle>
             <DialogDescription>
               {editingItem
-                ? `Update the details for this ${submodule?.name}.`
-                : `Fill out the form to create a new ${submodule?.name}.`}
+                ? `Update the details for this ${entityData?.name}.`
+                : `Fill out the form to create a new ${entityData?.name}.`}
             </DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto pr-4">
             <DynamicForm
-              key={editingItem ? editingItem.id : "new"}
+              key={editingItem ? editingItem.id : 'new'}
               schema={formSchema}
               apiCreateRoute={apiRoutes.create}
               apiUpdateRoute={apiRoutes.update}
@@ -278,13 +290,13 @@ const generatedCols = Object.keys(firstRow)
         </DialogContent>
       </Dialog>
 
-      {/* DELETE CONFIRMATION (unchanged) */}
+      {/* DELETE CONFIRMATION */}
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete{" "}
+              This will permanently delete{' '}
               <strong>{itemsToDelete.length} selected item(s)</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -297,7 +309,7 @@ const generatedCols = Object.keys(firstRow)
               className="bg-red-600 hover:bg-red-700"
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
