@@ -4,15 +4,25 @@ import Link from "next/link";
 import { Shield } from "lucide-react";
 import { ModeToggle } from "@/components/ui/ModeToggle";
 import { UserMenu } from "./UserMenu";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
+
 
 interface HeaderTopBarProps {
   roleName: string | null;
   onLogout: () => void;
 }
 
+
 export const HeaderTopBar = ({ roleName, onLogout }: HeaderTopBarProps) => {
+  const router = useRouter();
+
+   const handleBack = useCallback(() => {
+    router.back();
+  }, [router]);
+  
   return (
-    <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+    <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4" onClick={handleBack}>
       <Link href="/" className="flex items-center gap-2 shrink-0">
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
           <span className="text-white font-bold text-lg">B</span>

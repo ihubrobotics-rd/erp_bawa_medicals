@@ -1,5 +1,4 @@
 // @/components/features/dynamic-crud-page/DynamicCrudPage.tsx
-
 'use client';
 
 import React, {
@@ -11,7 +10,8 @@ import React, {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { RowSelectionState } from '@tanstack/react-table';
-import { Trash2, Pencil } from 'lucide-react';
+import { Trash2, Pencil, ArrowLeft } from 'lucide-react'; //  IMPORTED ArrowLeft
+import { useRouter } from 'next/navigation'; //  IMPORTED useRouter
 import api from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +37,7 @@ import { DynamicForm } from './DynamicForm';
 
 export function DynamicCrudPage({ schema }: { schema: any }) {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const privileges =
     schema?.role_privileges?.[0] || {
@@ -44,22 +45,18 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       can_edit: false,
       can_delete: false,
     };
-
-  // 👈 CHANGED: Check for submodules OR functionalities
+  // CHANGED: Check for submodules OR functionalities
   const entityData =
     schema?.submodules?.[0] || schema?.functionalities?.[0] || null;
-
-  // 👈 CHANGED: Use the new 'entityData' variable
+  // CHANGED: Use the new 'entityData' variable
   const apiRoutes = entityData?.api_routes || {};
   const formSchema = schema?.function_definitions || [];
-
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [itemsToDelete, setItemsToDelete] = useState<any[]>([]);
-
-  // 🧠 Fetch table data
+  //  Fetch table data
   const {
     data: tableData = [],
     isLoading,
@@ -73,7 +70,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     enabled: !!apiRoutes.get_all,
   });
 
-  // ⚙️ Build columns dynamically based on API data and schema
+  //  Build columns dynamically based on API data and schema
   const tableColumns = useMemo(() => {
     if (!tableData.length && !formSchema.length) return [];
 
@@ -134,7 +131,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     return generatedCols;
   }, [tableData, formSchema]);
 
-  //  Handlers (wrapped in useCallback)
+  //  Handlers (wrapped in useCallback)
   const handleAddNew = useCallback(() => {
     setEditingItem(null);
     setIsFormOpen(true);
@@ -164,7 +161,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   // Delete Mutation
   const deleteMutation = useMutation({
     mutationFn: async (ids: number[]) => {
-      // 👈 CHANGED: Check if apiRoutes.delete exists
+      //  CHANGED: Check if apiRoutes.delete exists
       if (!apiRoutes.delete) {
         throw new Error('Delete API route is not defined.');
       }
@@ -212,6 +209,11 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     }
   }, [selectedItem, handleEdit]);
 
+  // NEW HANDLER for the back button
+  const handleBack = useCallback(() => {
+    router.back();
+  }, [router]);
+
   const toolbarActions = (
     <div className="flex items-center gap-2">
       {numSelected === 1 && privileges.can_edit && (
@@ -236,11 +238,16 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
 
   return (
     <div className="container mx-auto p-4 md:p-8">
+      {/*  UPDATED this block to include the back button */}
       <div className="flex justify-between items-center mb-6">
-        {/* 👈 CHANGED: Use entityData.name for the title */}
         <h1 className="text-3xl font-bold capitalize">
           {entityData?.name || 'Data'} Management
         </h1>
+        
+        <Button variant="outline" size="sm" onClick={handleBack}  className='cursor-pointer'>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
       </div>
 
       <DynamicTable
@@ -264,7 +271,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
-            {/* 👈 CHANGED: Use entityData.name for dialog titles */}
+            {/*  CHANGED: Use entityData.name for dialog titles */}
             <DialogTitle className="capitalize">
               {editingItem
                 ? `Edit ${entityData?.name}`
