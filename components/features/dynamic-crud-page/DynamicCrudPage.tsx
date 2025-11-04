@@ -89,7 +89,7 @@ const generatedCols = Object.keys(firstRow)
     cell: ({ row }: any) => {
   const value = row.getValue(key);
 
-  // ✅ Handle boolean fields
+  // Handle boolean fields
   if (typeof value === "boolean") {
     return (
       <Badge variant={value ? "default" : "secondary"}>
@@ -97,13 +97,9 @@ const generatedCols = Object.keys(firstRow)
       </Badge>
     );
   }
-
-  // 🚫 Handle empty/null values
   if (value === null || value === undefined || value === "") {
     return <Badge variant="outline">N/A</Badge>;
   }
-
-  // 📅 Handle date/time fields like created_at or updated_at
   if (
     key.toLowerCase().includes("date") ||
     key.toLowerCase().includes("created_at") ||
@@ -123,17 +119,14 @@ const generatedCols = Object.keys(firstRow)
       return <div>{String(value)}</div>;
     }
   }
-
-  // 🧾 Default case
-  return <div>{String(value)}</div>;
-},
-
-        };
-      });
+      return <div>{String(value)}</div>;
+    },
+      };
+  });
 
     return generatedCols;
   }, [tableData, formSchema]);
-  // 🧾 Handlers (wrapped in useCallback)
+  //  Handlers (wrapped in useCallback)
   const handleAddNew = useCallback(() => {
     setEditingItem(null);
     setIsFormOpen(true);
@@ -202,7 +195,6 @@ const generatedCols = Object.keys(firstRow)
     return tableData[selectedIndexes[0]];
   }, [rowSelection, tableData]);
 
-  // 👈 Handler for the new toolbar edit button
   const handleToolbarEditClick = useCallback(() => {
     if (selectedItem) {
       handleEdit(selectedItem);
@@ -211,7 +203,6 @@ const generatedCols = Object.keys(firstRow)
 
   const toolbarActions = (
     <div className="flex items-center gap-2">
-      {/* 👈 NEW EDIT BUTTON (shows only when 1 item is selected) */}
       {numSelected === 1 && privileges.can_edit && (
         <Button variant="outline" size="sm" onClick={handleToolbarEditClick}>
           <Pencil className="mr-2 h-4 w-4" /> Edit
