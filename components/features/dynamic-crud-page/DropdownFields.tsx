@@ -14,7 +14,7 @@ const getOptionLabel = (option, field) => {
   if (option[specificNameKey]) {
     return option[specificNameKey];
   }
-  const fallbackKeys = ['name', 'label', 'title', 'state_name', 'country_name','designation_name','code','transport_type','currency_code'];
+  const fallbackKeys = ['name', 'label', 'title', 'state_name', 'country_name','designation_name','code','transport_type','currency_code','username'];
   for (const key of fallbackKeys) {
     if (option[key]) return option[key];
   }

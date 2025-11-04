@@ -3,12 +3,9 @@ import { z } from "zod";
 // Generates Zod schema dynamically based on field definitions
 export const generateZodSchema = (functionDefinitions: any[]) => {
   const shape: Record<string, any> = {};
-
   functionDefinitions.forEach((field) => {
     let validator: any;
-
     switch (field.input_type) {
-      // 🧮 Number fields (accept decimals like 0.92, nonnegative only)
       case "number":
         validator = z
           .coerce
@@ -21,18 +18,17 @@ export const generateZodSchema = (functionDefinitions: any[]) => {
             { message: `${field.label} must be a valid number.` }
           );
         break;
-
-      // 📧 Email fields
+          //EMail FIELD TYPE
       case "email":
         validator = z.string().email({ message: "Invalid email format" });
         break;
 
-      // ✅ Checkbox fields
+      // Checkbox fields
       case "checkbox":
         validator = z.boolean();
         break;
 
-      // 🔘 Radio fields
+      // Radio fields
       case "radio": {
         const values = field.values?.map((v: any) => v.value) ?? [];
 
@@ -61,14 +57,13 @@ export const generateZodSchema = (functionDefinitions: any[]) => {
         }
         break;
       }
-
-      // ✏️ Default case — treat as string input
+      // Default case — treat as string input
       default:
         validator = z.string();
         break;
     }
 
-    // 🧷 Apply required/optional rule
+    // Apply required/optional rule
     if (field.is_required) {
       const typeName = (validator as any)?._def?.typeName;
 
@@ -83,9 +78,7 @@ export const generateZodSchema = (functionDefinitions: any[]) => {
     } else {
       validator = validator.optional().nullable();
     }
-
     shape[field.input_name] = validator;
-  });
-
+  })
   return z.object(shape);
 };
