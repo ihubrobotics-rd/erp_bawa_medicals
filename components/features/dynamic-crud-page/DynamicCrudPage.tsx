@@ -68,7 +68,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
 
   // ⚙️ Build columns dynamically based on API data and schema
   const tableColumns = useMemo(() => {
-    // ... (This useMemo block is unchanged)
     if (!tableData.length && !formSchema.length) return [];
 
     const firstRow = tableData[0] || {};
@@ -76,38 +75,58 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       formSchema.map((f: any) => [f.input_name, f.label])
     );
 
-    const generatedCols = Object.keys(firstRow)
+const generatedCols = Object.keys(firstRow)
       .filter((key) => key !== "id")
       .map((key) => {
         const label =
           schemaMap[key] ||
-          schemaMap[key.replace("_name", "")] ||
-          key.replace(/_/g, " ");
+          schemaMap[key.replace("", "")] ||
+          key.replace("", " ");
 
         return {
           accessorKey: key,
           header: label,
-          cell: ({ row }: any) => {
-            const value = row.getValue(key);
-            if (typeof value === "boolean") {
-              return (
-                <Badge variant={value ? "default" : "secondary"}>
-                  {value ? "Yes" : "No"}
-                </Badge>
-              );
-            }
-            if (value === null || value === undefined || value === "") {
-              return <Badge variant="outline">N/A</Badge>;
-            }
-            return <div>{String(value)}</div>;
-          },
-        };
+    cell: ({ row }: any) => {
+  const value = row.getValue(key);
+
+  // Handle boolean fields
+  if (typeof value === "boolean") {
+    return (
+      <Badge variant={value ? "default" : "secondary"}>
+        {value ? "Yes" : "No"}
+      </Badge>
+    );
+  }
+  if (value === null || value === undefined || value === "") {
+    return <Badge variant="outline">N/A</Badge>;
+  }
+  if (
+    key.toLowerCase().includes("date") ||
+    key.toLowerCase().includes("created_at") ||
+    key.toLowerCase().includes("updated_at")
+  ) {
+    try {
+      const formatted = new Date(value).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       });
+      return <div>{formatted}</div>;
+    } catch {
+      return <div>{String(value)}</div>;
+    }
+  }
+      return <div>{String(value)}</div>;
+    },
+      };
+  });
 
     return generatedCols;
   }, [tableData, formSchema]);
-
-  // 🧾 Handlers (wrapped in useCallback)
+  //  Handlers (wrapped in useCallback)
   const handleAddNew = useCallback(() => {
     setEditingItem(null);
     setIsFormOpen(true);
@@ -134,9 +153,8 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     }
   }, [rowSelection, tableData]);
 
-  // ❌ Delete Mutation
+  // Delete Mutation
   const deleteMutation = useMutation({
-    // ... (This mutation is unchanged)
     mutationFn: async (ids: number[]) => {
       const deletePromises = ids.map((id) => {
         const deleteUrl = apiRoutes.delete.replace("<int:pk>", String(id));
@@ -177,7 +195,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     return tableData[selectedIndexes[0]];
   }, [rowSelection, tableData]);
 
-  // 👈 Handler for the new toolbar edit button
   const handleToolbarEditClick = useCallback(() => {
     if (selectedItem) {
       handleEdit(selectedItem);
@@ -186,7 +203,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
 
   const toolbarActions = (
     <div className="flex items-center gap-2">
-      {/* 👈 NEW EDIT BUTTON (shows only when 1 item is selected) */}
       {numSelected === 1 && privileges.can_edit && (
         <Button variant="outline" size="sm" onClick={handleToolbarEditClick}>
           <Pencil className="mr-2 h-4 w-4" /> Edit

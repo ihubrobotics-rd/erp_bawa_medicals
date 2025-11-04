@@ -189,7 +189,6 @@ export function DynamicForm({
                     />
                   );
                 }
-
                 return (
                   <Input
                     id={field.input_name}
@@ -219,6 +218,7 @@ export function DynamicForm({
             </div>
           </div>
         ))}
+        
       </div>
 
       <div className="flex flex-col justify-end gap-3 border-t pt-6 sm:flex-row">
