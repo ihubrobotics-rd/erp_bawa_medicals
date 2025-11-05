@@ -34,7 +34,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type DataRow = Record<string, any>;
-
 type DynamicTableProps = {
   data: DataRow[];
   columns: {
@@ -73,7 +72,7 @@ export function DynamicTable({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
-  // 🧠 Build columns dynamically
+  //  Build columns dynamically
   const columns = useMemo<ColumnDef<DataRow>[]>(() => {
     if (!Array.isArray(initialColumns) || initialColumns.length === 0) {
       // Return base columns (select, actions) even if data-driven columns are empty
@@ -102,7 +101,7 @@ export function DynamicTable({
         },
       ];
 
-      // 🔧 Add Actions column if privileges allow
+      //  Add Actions column if privileges allow
       if (privileges.can_edit || privileges.can_delete) {
         baseColumns.push({
           id: "actions",
@@ -189,7 +188,7 @@ export function DynamicTable({
       })),
     ];
 
-    // 🔧 Add Actions column if privileges allow
+    //  Add Actions column if privileges allow
     if (privileges.can_edit || privileges.can_delete) {
       baseColumns.push({
         id: "actions",
@@ -246,19 +245,19 @@ export function DynamicTable({
     },
   });
 
-  // ❌ Error handling
+  //  Error handling
   if (isError) {
     return <div className="p-4 text-center text-red-500">Error loading data.</div>;
   }
 
-  // ⚠️ Schema not ready (REMOVED THIS BLOCK)
+  //  Schema not ready (REMOVED THIS BLOCK)
   // if (!initialColumns || initialColumns.length === 0) { ... }
 
   const hasRows = table.getRowModel().rows.length > 0;
 
   return (
     <div className="w-full space-y-4">
-      {/* 🔍 Search bar + toolbar */}
+      {/*  Search bar + toolbar */}
       {/* This will now render even if initialColumns is empty */}
       <div className="flex items-center justify-between">
         {initialColumns?.[0]?.accessorKey && (
@@ -283,7 +282,7 @@ export function DynamicTable({
         <div className="flex items-center gap-2">{toolbarActions}</div>
       </div>
 
-      {/* 🧱 Table */}
+      {/*  Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -328,7 +327,7 @@ export function DynamicTable({
                 </TableRow>
               ))
             ) : (
-              // ✅ This logic was already correct
+              //  This logic was already correct
               <TableRow>
                 <TableCell
                   colSpan={columns.length} // This will be 2 (select, actions) if empty
@@ -345,7 +344,7 @@ export function DynamicTable({
         </Table>
       </div>
 
-      {/* 📄 Pagination */}
+      {/*  Pagination */}
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
