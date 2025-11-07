@@ -32,10 +32,9 @@ export function SuperAdminHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-border dark:bg-slate-950 bg-white">
       {/* Top Bar */}
       <HeaderTopBar roleName={roleName} onLogout={handleLogout} />
-
       {/* Second Navbar (Mega Menu) */}
       <div className="border-t border-border">
-        <MegaMenuNav navigationTree={navigationTree} isLoading={isLoading} />
+        <MegaMenuNav navigationTree={navigationTree} isLoading={isLoading}/>
       </div>
     </header>
   );

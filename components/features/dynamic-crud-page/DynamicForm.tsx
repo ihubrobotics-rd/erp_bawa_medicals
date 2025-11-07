@@ -101,7 +101,7 @@ export function DynamicForm({
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
         {schema.map((field) => (
           // --- MODIFICATION 1: Added justify-between and h-full ---
-          <div key={field.id} className="flex flex-col justify-between h-full">
+          <div key={field.id} className="overflow-hidden wrap-break-word whitespace-normal">
             <Label
               htmlFor={field.input_name}
               className="capitalize font-medium"
