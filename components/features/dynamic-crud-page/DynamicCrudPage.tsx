@@ -34,10 +34,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { DynamicTable } from './DynamicTable';
 import { DynamicForm } from './DynamicForm';
+import { useGlobalBack } from "@/hooks/useGlobalBack";
 
 export function DynamicCrudPage({ schema }: { schema: any }) {
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const { handleBack } = useGlobalBack();
 
   const privileges =
     schema?.role_privileges?.[0] || {
@@ -54,6 +55,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isBackAlertOpen, setIsBackAlertOpen] = useState(false);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [itemsToDelete, setItemsToDelete] = useState<any[]>([]);
   //  Fetch table data
@@ -208,10 +210,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       handleEdit(selectedItem);
     }
   }, [selectedItem, handleEdit]);
-  // NEW HANDLER for the back button
-  const handleBack = useCallback(() => {
-    router.back();
-  }, [router]);
+
 
 
   const toolbarActions = (
@@ -237,17 +236,24 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   );
 
   return (
+
+
     <div className="container mx-auto p-4 md:p-8">
-      {/*  UPDATED this block to include the back button */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold capitalize">
+      <div className="relative mb-6">
+        {/* Back button positioned above heading with space */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleBack}
+          className="absolute -top-10 left-0 cursor-pointer"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+        </Button>
+
+        {/* Heading with extra top margin to create visual space */}
+        <h1 className="mt-4 text-3xl font-bold capitalize">
           {entityData?.name || 'Data'} Management
         </h1>
-        
-        <Button variant="outline" size="sm" onClick={handleBack}  className='cursor-pointer'>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
       </div>
 
       <DynamicTable
@@ -261,10 +267,12 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
         rowSelection={rowSelection}
         setRowSelection={setRowSelection}
         toolbarActions={toolbarActions}
-        // CHANGED: Use entityData.name for the placeholder
-        searchPlaceholder={`Search ${
-          entityData?.name?.toLowerCase() || 'items'
-        }...`}
+
+        // 👈 CHANGED: Use entityData.name for the placeholder
+        searchPlaceholder={`Search ${entityData?.name?.toLowerCase() || 'items'
+          }...`}
+
+      
       />
 
       {/* FORM DIALOG */}

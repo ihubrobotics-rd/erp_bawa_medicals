@@ -49,7 +49,6 @@ export default function LoginPage() {
       setError("");
       // 1. Log in
       await login(data.username, data.password);
-      
       // 2. Just call the central navigation function. It does the rest.
       await navigateToRoleOrLogin(router);
 

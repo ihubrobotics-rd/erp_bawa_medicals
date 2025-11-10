@@ -12,7 +12,7 @@ interface NavItemProps {
   hoveredCategory: string | null;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange?: (open: boolean) => void; // ✅ made optional
 }
 
 export const NavItem = ({
@@ -39,7 +39,12 @@ export const NavItem = ({
     const popoverProps = isHoverCapable
       ? {
           open: hoveredCategory === module.name,
-          onOpenChange: onOpenChange,
+          // onOpenChange: onOpenChange,
+           onOpenChange: (open: boolean) => {
+            // ✅ Prevent closing dropdown on click
+            if (!open && hoveredCategory === module.name) return;
+            onOpenChange?.(open);
+          },
         }
       : {};
 

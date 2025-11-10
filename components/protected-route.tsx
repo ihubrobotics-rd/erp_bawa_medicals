@@ -29,7 +29,7 @@ export default function ProtectedRoute({ children, allowedRoles }: Props) {
         // If no token at all -> go login (replace history so original protected URL isn't kept)
         if (!token) {
           if (mounted) router.replace("/login");
-          return;
+          return; 
         }
 
         // If token expired try refresh
