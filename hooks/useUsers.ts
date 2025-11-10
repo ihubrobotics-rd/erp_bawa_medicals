@@ -11,6 +11,7 @@ import {
 } from "@/lib/api/users";
 import type { User } from "@/types/medical";
 
+
 export const useUsers = (searchQuery: string = "") => {
   const queryClient = useQueryClient();
 
@@ -20,7 +21,7 @@ export const useUsers = (searchQuery: string = "") => {
     refetchOnWindowFocus: true,
   });
 
-  // ✅ Mutation for creating a user with proper error handling
+  //  Mutation for creating a user with proper error handling
   const createUserMutation = useMutation({
     mutationFn: (userData: CreateUserPayload) => createUser(userData),
 

@@ -7,12 +7,10 @@ import { UserMenu } from "./UserMenu";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
-
 interface HeaderTopBarProps {
   roleName: string | null;
   onLogout: () => void;
 }
-
 
 export const HeaderTopBar = ({ roleName, onLogout }: HeaderTopBarProps) => {
   const router = useRouter();
