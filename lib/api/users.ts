@@ -39,8 +39,7 @@ export const updateUser = async (id: number, userData: UpdateUserPayload): Promi
 
 // DELETE: Deactivate/delete a user (assuming endpoint)
 export const deleteUser = async (id: number) => {
-  // Assuming a standard DELETE endpoint, adjust if different
-  const { data } = await api.delete(`/accounts/users/delete/${id}/`);
+  const { data } = await api.delete(`/accounts/users/deactivate/${id}/`);
   return data;
 };
 
