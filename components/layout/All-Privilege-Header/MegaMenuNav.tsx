@@ -86,7 +86,7 @@ export const MegaMenuNav = ({ navigationTree, isLoading }: MegaMenuNavProps) => 
               hoveredCategory={hoveredCategory}
               onMouseEnter={() => handleMouseEnter(module.name)}
               onMouseLeave={handleMouseLeave}
-              onOpenChange={(open) => !open && setHoveredCategory(null)}
+              // onOpenChange={(open) => !open && setHoveredCategory(null)}
             />
           ))}
       </nav>

@@ -55,6 +55,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isBackAlertOpen, setIsBackAlertOpen] = useState(false);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [itemsToDelete, setItemsToDelete] = useState<any[]>([]);
   //  Fetch table data
