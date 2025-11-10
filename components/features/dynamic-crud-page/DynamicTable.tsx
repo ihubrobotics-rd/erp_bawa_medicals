@@ -34,7 +34,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type DataRow = Record<string, any>;
-
 type DynamicTableProps = {
   data: DataRow[];
   columns: {
@@ -73,10 +72,75 @@ export function DynamicTable({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
-  // 🧠 Build columns dynamically
+  //  Build columns dynamically
   const columns = useMemo<ColumnDef<DataRow>[]>(() => {
-    if (!Array.isArray(initialColumns) || initialColumns.length === 0) return [];
+    if (!Array.isArray(initialColumns) || initialColumns.length === 0) {
+      // Return base columns (select, actions) even if data-driven columns are empty
+      // This is crucial for the empty table state
+      const baseColumns: ColumnDef<DataRow>[] = [
+        {
+          id: "select",
+          header: ({ table }) => (
+            <Checkbox
+              checked={table.getIsAllPageRowsSelected()}
+              onCheckedChange={(value) =>
+                table.toggleAllPageRowsSelected(!!value)
+              }
+              aria-label="Select all"
+            />
+          ),
+          cell: ({ row }) => (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+            />
+          ),
+          enableSorting: false,
+          enableHiding: false,
+        },
+      ];
 
+      //  Add Actions column if privileges allow
+      if (privileges.can_edit || privileges.can_delete) {
+        baseColumns.push({
+          id: "actions",
+          header: () => <div className="text-right">Actions</div>,
+          cell: ({ row }) => (
+            <div className="text-right">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {privileges.can_edit && (
+                    <DropdownMenuItem onClick={() => onEdit(row.original)}>
+                      <Pencil className="mr-2 h-4 w-4" /> Edit
+                    </DropdownMenuItem>
+                  )}
+                  {privileges.can_delete && (
+                    <DropdownMenuItem
+                      className="text-red-600 focus:text-red-600"
+                      onClick={() => onDelete(row.original)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ),
+          enableSorting: false,
+          enableHiding: false,
+        });
+      }
+      return baseColumns;
+    }
+
+    // --- This is the original logic for when data EXISTS ---
     const baseColumns: ColumnDef<DataRow>[] = [
       {
         id: "select",
@@ -124,7 +188,7 @@ export function DynamicTable({
       })),
     ];
 
-    // 🔧 Add Actions column if privileges allow
+    //  Add Actions column if privileges allow
     if (privileges.can_edit || privileges.can_delete) {
       baseColumns.push({
         id: "actions",
@@ -160,7 +224,6 @@ export function DynamicTable({
         enableHiding: false,
       });
     }
-
     return baseColumns;
   }, [initialColumns, privileges, onEdit, onDelete]);
 
@@ -181,25 +244,18 @@ export function DynamicTable({
     },
   });
 
-  // ❌ Error handling
+  //  Error handling
   if (isError) {
     return <div className="p-4 text-center text-red-500">Error loading data.</div>;
   }
 
-  // ⚠️ Schema not ready
-  if (!initialColumns || initialColumns.length === 0) {
-    return (
-      <div className="p-6 text-center text-gray-500">
-        No schema available to display table.
-      </div>
-    );
-  }
+  //  Schema not ready (REMOVED THIS BLOCK)
 
   const hasRows = table.getRowModel().rows.length > 0;
 
   return (
     <div className="w-full space-y-4">
-      {/* 🔍 Search bar + toolbar */}
+      {/*  Search bar + toolbar */}
       <div className="flex items-center justify-between">
         {initialColumns?.[0]?.accessorKey && (
           <Input
@@ -217,10 +273,13 @@ export function DynamicTable({
             className="max-w-sm"
           />
         )}
+        {/* If no search bar, this div keeps the toolbarActions to the right */}
+        {!initialColumns?.[0]?.accessorKey && <div className="max-w-sm" />}
+        
         <div className="flex items-center gap-2">{toolbarActions}</div>
       </div>
 
-      {/* 🧱 Table */}
+      {/*  Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -265,13 +324,15 @@ export function DynamicTable({
                 </TableRow>
               ))
             ) : (
-              // ✅ Show empty table with headers and no rows
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={columns.length} 
                   className="h-24 text-center text-gray-500"
                 >
-                  No data available. {privileges.can_add ? "Click Add to create new entry." : ""}
+                  No data available.{" "}
+                  {privileges.can_add
+                    ? "Click Add New to create an entry."
+                    : ""}
                 </TableCell>
               </TableRow>
             )}
@@ -279,7 +340,7 @@ export function DynamicTable({
         </Table>
       </div>
 
-      {/* 📄 Pagination */}
+      {/*  Pagination */}
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}

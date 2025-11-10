@@ -14,24 +14,20 @@ const getOptionLabel = (option, field) => {
   if (option[specificNameKey]) {
     return option[specificNameKey];
   }
-  const fallbackKeys = ['name', 'label', 'title', 'state_name', 'country_name','designation_name','code','transport_type','currency_code'];
+  const fallbackKeys = ['name', 'label', 'title', 'state_name', 'country_name','designation_name','code','transport_type','currency_code','username','category_name'];
   for (const key of fallbackKeys) {
     if (option[key]) return option[key];
   }
   return `Option ${option.id}`;
 };
 
-// FINAL VERSION: API-based dropdown component with disabling logic
 export function DynamicDropdown({ field, schema, setValue, watch }) {
   const currentValue = watch(field.input_name);
-
-  // --- NEW LOGIC TO DETERMINE IF THE FIELD SHOULD BE DISABLED ---
   const isTargetField = schema.some(
     (otherField) => otherField.mapping === field.input_name
   );
-  // Disable the field if it's a target AND it already has a value.
+
   const isDisabled = isTargetField && !!currentValue;
-  // --- END OF NEW LOGIC ---
 
   const { data: options, isLoading, isError } = useQuery({
     queryKey: ['dropdown-options', field.options_api],
@@ -64,10 +60,7 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
 
   const handleValueChange = (value) => {
     setValue(field.input_name, value);
-
-    // If this is a trigger field, also clear the fields it maps to.
     if (field.mapping) {
-      // This ensures if you change the city, the old state value is cleared before the new one is set.
       setValue(field.mapping, null, { shouldValidate: true });
     }
     
@@ -78,14 +71,12 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
 
   if (isLoading) return <p className="text-sm text-muted-foreground mt-2">Loading {field.label}...</p>;
   if (isError) return <p className="text-sm text-red-500 mt-2">Failed to load {field.label}</p>;
-
     if (!options.length)
-    return (
-      <p className="text-sm text-muted-foreground mt-2">
-        No {field.label} data available
-      </p>
-    );
-
+        return (
+          <p className="text-sm text-muted-foreground mt-2">
+            No {field.label} data available
+          </p>
+        );
   return (
     <Select
       onValueChange={handleValueChange}
@@ -110,26 +101,35 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
 export function StaticDropdown({ field, setValue, watch }) {
   const currentValue = watch(field.input_name);
   let options = [];
+
   try {
-    options = JSON.parse(
-      '[' + field.values.replace(/\(/g, '[').replace(/\)/g, ']') + ']'
-      .replace(/'/g, '"')
-    );
+    const formatted = field.values
+      .replace(/^\[|\]$/g, "") // remove outer brackets
+      .split(/\),\s*\(/)       // split each tuple
+      .map((pair) =>
+        pair
+          .replace(/[\[\]\(\)']/g, "") // strip symbols
+          .split(",")                  // split by comma
+          .map((v) => v.trim())        // trim spaces
+      );
+    options = formatted;
   } catch (err) {
-    console.error('Failed to parse static values:', field.values, err);
+    console.error("Failed to parse static values:", field.values, err);
   }
+
+
   return (
     <Select
       onValueChange={(value) => setValue(field.input_name, value)}
-      value={currentValue ? currentValue.toString() : ''}
+      value={currentValue ? currentValue.toString() : ""}
     >
       <SelectTrigger className="mt-2">
         <SelectValue placeholder={`Select ${field.label}`} />
       </SelectTrigger>
       <SelectContent>
-        {options.map((opt, index) => (
-          <SelectItem key={index} value={opt[0]}>
-            {opt[1]}
+        {options.map(([value, label], index) => (
+          <SelectItem key={index} value={value}>
+            {label}
           </SelectItem>
         ))}
       </SelectContent>
