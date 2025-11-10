@@ -224,7 +224,6 @@ export function DynamicTable({
         enableHiding: false,
       });
     }
-
     return baseColumns;
   }, [initialColumns, privileges, onEdit, onDelete]);
 
@@ -251,14 +250,12 @@ export function DynamicTable({
   }
 
   //  Schema not ready (REMOVED THIS BLOCK)
-  // if (!initialColumns || initialColumns.length === 0) { ... }
 
   const hasRows = table.getRowModel().rows.length > 0;
 
   return (
     <div className="w-full space-y-4">
       {/*  Search bar + toolbar */}
-      {/* This will now render even if initialColumns is empty */}
       <div className="flex items-center justify-between">
         {initialColumns?.[0]?.accessorKey && (
           <Input
@@ -327,10 +324,9 @@ export function DynamicTable({
                 </TableRow>
               ))
             ) : (
-              //  This logic was already correct
               <TableRow>
                 <TableCell
-                  colSpan={columns.length} // This will be 2 (select, actions) if empty
+                  colSpan={columns.length} 
                   className="h-24 text-center text-gray-500"
                 >
                   No data available.{" "}

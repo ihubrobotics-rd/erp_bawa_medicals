@@ -212,6 +212,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   }, [selectedItem, handleEdit]);
 
 
+
   const toolbarActions = (
     <div className="flex items-center gap-2">
       {numSelected === 1 && privileges.can_edit && (
@@ -266,9 +267,12 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
         rowSelection={rowSelection}
         setRowSelection={setRowSelection}
         toolbarActions={toolbarActions}
+
         // 👈 CHANGED: Use entityData.name for the placeholder
         searchPlaceholder={`Search ${entityData?.name?.toLowerCase() || 'items'
           }...`}
+
+      
       />
 
       {/* FORM DIALOG */}

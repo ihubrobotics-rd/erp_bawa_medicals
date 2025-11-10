@@ -22,7 +22,6 @@ export type UpdateUserPayload = {
 // GET: List all users
 export const getUsers = async (search?: string): Promise<User[]> => {
   const { data } = await api.get("/accounts/users/list/", { params: { search } });
-  // Make sure to return the array of users from the response structure
   return data.data.results || data.data || data;
 };
 
@@ -40,8 +39,7 @@ export const updateUser = async (id: number, userData: UpdateUserPayload): Promi
 
 // DELETE: Deactivate/delete a user (assuming endpoint)
 export const deleteUser = async (id: number) => {
-  // Assuming a standard DELETE endpoint, adjust if different
-  const { data } = await api.delete(`/accounts/users/delete/${id}/`);
+  const { data } = await api.delete(`/accounts/users/deactivate/${id}/`);
   return data;
 };
 

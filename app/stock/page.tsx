@@ -14,6 +14,8 @@ import { StockAlertsList } from "@/components/stock/stock-alerts-list"
 import { LowStockReport } from "@/components/stock/low-stock-report"
 import type { Medicine } from "@/types/medical"
 import { AddStockFlow } from "@/components/stock/AddStockFlow"
+import { SuperAdminHeader } from "@/components/layout/All-Privilege-Header"
+import ProtectedRoute from "@/components/protected-route"
 
 const mockMedicines: Medicine[] = [
   {
@@ -155,11 +157,10 @@ export default function StockManagement() {
   }
 
   return (
+  <ProtectedRoute allowedRoles={["super admin", "stock"]}>
     <div className="min-h-screen bg-background">
-      <StockHeader />
-
+      <SuperAdminHeader />
       <div className="container mx-auto px-4 py-6">
-        {/* Dashboard Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -309,5 +310,6 @@ export default function StockManagement() {
         />
       )}
     </div>
+  </ProtectedRoute>
   )
 }
