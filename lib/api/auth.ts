@@ -260,7 +260,9 @@ export const navigateToRoleOrLogin = async (
       nav("/superadmin");
     } else if (r.includes("admin")) {
       nav("/admin");
-    } else {
+    }
+ 
+    else {
       nav("/dashboard");
     }
   } catch (e) {

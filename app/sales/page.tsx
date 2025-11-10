@@ -12,6 +12,8 @@ import { StockAlertForm } from "@/components/sales/stock-alert-form"
 import { CustomerOrderForm } from "@/components/sales/customer-order-form"
 import { SalesHeader } from "@/components/layout/sales-header"
 import type { Medicine, StockAlert } from "@/types/medical"
+import { SuperAdminHeader } from "@/components/layout/All-Privilege-Header"
+import ProtectedRoute from "@/components/protected-route"
 
 const mockMedicines: Medicine[] = [
   {
@@ -144,9 +146,9 @@ export default function SalesDashboard() {
   }
 
   return (
+  <ProtectedRoute allowedRoles={["sales"]}>
     <div className="min-h-screen bg-background">
-      <SalesHeader />
-
+      <SuperAdminHeader />
       <div className="container mx-auto px-4 py-6">
         {/* Dashboard Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -369,5 +371,6 @@ export default function SalesDashboard() {
         />
       )}
     </div>
+        </ProtectedRoute>
   )
 }

@@ -208,11 +208,11 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       handleEdit(selectedItem);
     }
   }, [selectedItem, handleEdit]);
-
   // NEW HANDLER for the back button
   const handleBack = useCallback(() => {
     router.back();
   }, [router]);
+
 
   const toolbarActions = (
     <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
         rowSelection={rowSelection}
         setRowSelection={setRowSelection}
         toolbarActions={toolbarActions}
-        // 👈 CHANGED: Use entityData.name for the placeholder
+        // CHANGED: Use entityData.name for the placeholder
         searchPlaceholder={`Search ${
           entityData?.name?.toLowerCase() || 'items'
         }...`}

@@ -22,7 +22,6 @@ export type UpdateUserPayload = {
 // GET: List all users
 export const getUsers = async (search?: string): Promise<User[]> => {
   const { data } = await api.get("/accounts/users/list/", { params: { search } });
-  // Make sure to return the array of users from the response structure
   return data.data.results || data.data || data;
 };
 
