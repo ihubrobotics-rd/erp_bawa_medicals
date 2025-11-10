@@ -6,6 +6,8 @@ import { ModeToggle } from "@/components/ui/ModeToggle";
 import { UserMenu } from "./UserMenu";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
+import { useGlobalBack } from "@/hooks/useGlobalBack";
+
 
 interface HeaderTopBarProps {
   roleName: string | null;
@@ -13,11 +15,7 @@ interface HeaderTopBarProps {
 }
 
 export const HeaderTopBar = ({ roleName, onLogout }: HeaderTopBarProps) => {
-  const router = useRouter();
-
-   const handleBack = useCallback(() => {
-    router.back();
-  }, [router]);
+ const { handleBack } = useGlobalBack();
   
   return (
     <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4" onClick={handleBack}>
