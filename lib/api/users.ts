@@ -1,5 +1,5 @@
 // lib/api/users.ts
-import api from "../api"; // Assuming you have a configured axios instance
+import api from "../api"; 
 import type { User } from "@/types/medical";
 
 // Define payloads for creating and updating users
@@ -15,7 +15,7 @@ export type CreateUserPayload = {
 export type UpdateUserPayload = {
   email: string;
   mobile: string;
-  role?: number; // Role is optional for standard users, required for superadmin edits
+  role?: number; 
   is_active?: boolean;
 };
 
@@ -37,7 +37,7 @@ export const updateUser = async (id: number, userData: UpdateUserPayload): Promi
   return data.data;
 };
 
-// DELETE: Deactivate/delete a user (assuming endpoint)
+//Deactivate a user (assuming endpoint)
 export const deleteUser = async (id: number) => {
   const { data } = await api.delete(`/accounts/users/deactivate/${id}/`);
   return data;
