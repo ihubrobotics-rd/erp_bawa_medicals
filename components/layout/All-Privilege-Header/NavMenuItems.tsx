@@ -226,7 +226,7 @@ export const MenuContent = ({ module }: { module: any }) => {
               isOpen={isOpen}
               onToggle={() => handleToggle(sub)}
               buttonRef={(el: HTMLButtonElement) => {
-                buttonRefs.current[sub.submoduleId] = el;
+              buttonRefs.current[sub.submoduleId] = el;
               }}
             />
           </div>

@@ -78,22 +78,29 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
           </p>
         );
   return (
-    <Select
-      onValueChange={handleValueChange}
-      value={currentValue ? currentValue.toString() : ''}
-      disabled={isDisabled} 
-    >
-      <SelectTrigger className="mt-2">
-        <SelectValue placeholder={`Select ${field.label}`} />
-      </SelectTrigger>
-      <SelectContent>
-        {options?.map((opt) => (
-          <SelectItem key={opt.id} value={opt.id.toString()}>
-            {getOptionLabel(opt, field)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+   <Select
+  onValueChange={handleValueChange}
+  value={currentValue ? currentValue.toString() : ''}
+  disabled={isDisabled}
+>
+  <SelectTrigger
+    className="mt-2 w-full max-w-[250px] truncate overflow-hidden whitespace-nowrap text-ellipsis"
+  >
+    <SelectValue
+      placeholder={`Select ${field.label}`}
+      className="truncate overflow-hidden whitespace-nowrap text-ellipsis"
+    />
+  </SelectTrigger>
+
+  <SelectContent className="max-h-60 overflow-auto">
+    {options?.map((opt) => (
+      <SelectItem key={opt.id} value={opt.id.toString()}>
+        {getOptionLabel(opt, field)}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
   );
 }
 
