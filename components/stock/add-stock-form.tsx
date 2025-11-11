@@ -48,7 +48,7 @@ export function AddStockForm({ medicine, onClose }: AddStockFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     console.log(isNewMedicine ? "Adding new medicine:" : "Adding stock to existing medicine:", formData)
-    // TODO: Implement stock addition/medicine creation
+    
     onClose()
   }
 
