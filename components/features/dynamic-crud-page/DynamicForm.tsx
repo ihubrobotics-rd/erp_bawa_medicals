@@ -22,7 +22,7 @@ import {
   AlertDialogDescription,
   AlertDialogCancel,
   AlertDialogAction,
-} from "@/components/ui/alert-dialog"; // ✅ Use shadcn's AlertDialog
+} from "@/components/ui/alert-dialog"; 
 
 const defaultRadioOptions = [
   { label: "Yes", value: "true" },
@@ -40,7 +40,7 @@ export function DynamicForm({
   const queryClient = useQueryClient();
   const isEditMode = !!initialData;
 
-  // ✅ Add state hook here
+  // Add state hook here
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
 
   const formSchema = generateZodSchema(schema);
@@ -106,7 +106,7 @@ export function DynamicForm({
     mutation.mutate(sanitizedData);
   };
 
-  // ✅ Entire UI goes inside one return
+  // Entire UI goes inside one return 
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col space-y-6">
@@ -220,7 +220,7 @@ export function DynamicForm({
           ))}
         </div>
 
-        {/* ✅ Cancel + Save buttons */}
+        {/* Cancel + Save buttons */}
         <div className="flex flex-col justify-end gap-3 border-t pt-6 sm:flex-row">
           <Button
             type="button"
@@ -240,7 +240,7 @@ export function DynamicForm({
         </div>
       </form>
 
-      {/* ✅ Add the alert dialog here, after the form */}
+      {/* Add the alert dialog here, after the form */}
       <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

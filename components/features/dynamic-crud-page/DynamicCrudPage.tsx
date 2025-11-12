@@ -10,8 +10,8 @@ import React, {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { RowSelectionState } from '@tanstack/react-table';
-import { Trash2, Pencil, ArrowLeft } from 'lucide-react'; //  IMPORTED ArrowLeft
-import { useRouter } from 'next/navigation'; //  IMPORTED useRouter
+import { Trash2, Pencil, ArrowLeft } from 'lucide-react'; 
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -196,7 +196,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   };
 
   const numSelected = Object.keys(rowSelection).length;
-
   const selectedItem = useMemo(() => {
     const selectedIndexes = Object.keys(rowSelection).map(Number);
     if (selectedIndexes.length !== 1) {
@@ -210,8 +209,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       handleEdit(selectedItem);
     }
   }, [selectedItem, handleEdit]);
-
-
 
   const toolbarActions = (
     <div className="flex items-center gap-2">
@@ -234,10 +231,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       )}
     </div>
   );
-
   return (
-
-
     <div className="container mx-auto p-4 md:p-8">
       <div className="relative mb-6">
         {/* Back button positioned above heading with space */}
@@ -255,7 +249,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
           {entityData?.name || 'Data'} Management
         </h1>
       </div>
-
       <DynamicTable
         columns={tableColumns}
         data={tableData}
@@ -267,14 +260,10 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
         rowSelection={rowSelection}
         setRowSelection={setRowSelection}
         toolbarActions={toolbarActions}
-
-        // 👈 CHANGED: Use entityData.name for the placeholder
+        // CHANGED: Use entityData.name for the placeholder
         searchPlaceholder={`Search ${entityData?.name?.toLowerCase() || 'items'
           }...`}
-
-      
       />
-
       {/* FORM DIALOG */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
@@ -304,7 +293,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
           </div>
         </DialogContent>
       </Dialog>
-
       {/* DELETE CONFIRMATION */}
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
