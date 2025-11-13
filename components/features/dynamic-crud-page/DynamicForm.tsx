@@ -1,6 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
+'use client';
+import { useEffect, useState, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,7 +21,9 @@ import {
   AlertDialogDescription,
   AlertDialogCancel,
   AlertDialogAction,
+
 } from "@/components/ui/alert-dialog"; 
+
 
 const defaultRadioOptions = [
   { label: "Yes", value: "true" },
@@ -36,12 +37,14 @@ export function DynamicForm({
   apiGetAllRoute,
   initialData = null,
   onClose,
+  onDirtyChange, // ✅ parent handler
 }) {
   const queryClient = useQueryClient();
   const isEditMode = !!initialData;
 
   // Add state hook here
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
+  const initialDataRef = useRef(initialData);
 
   const formSchema = generateZodSchema(schema);
 
@@ -58,11 +61,30 @@ export function DynamicForm({
     defaultValues: initialData || {},
   });
 
+  // Reset form when editing
   useEffect(() => {
     if (isEditMode && initialData) {
       reset(initialData);
+      initialDataRef.current = initialData;
     }
   }, [initialData, reset, isEditMode]);
+
+  // ✅ Watch for manual user input
+  const watchedValues = watch();
+
+  useEffect(() => {
+    if (!onDirtyChange) return;
+
+    // Compare current values to initial
+    const hasInput = Object.keys(watchedValues).some((key) => {
+      const val = watchedValues[key];
+      const initial = initialDataRef.current ? initialDataRef.current[key] ?? "" : "";
+      // Detect any actual input/change
+      return val !== "" && val !== null && val !== undefined && val !== initial;
+    });
+
+    onDirtyChange(hasInput);
+  }, [watchedValues, onDirtyChange]);
 
   const mutation = useMutation({
     mutationFn: async (formData: any) => {
@@ -81,6 +103,7 @@ export function DynamicForm({
       queryClient.invalidateQueries({
         queryKey: ["tableData", apiGetAllRoute],
       });
+      onDirtyChange?.(false); // ✅ Reset dirty flag
       onClose();
     },
     onError: (error: any) => {
@@ -198,10 +221,7 @@ export function DynamicForm({
                       min={field.input_type === "number" ? 0 : undefined}
                       step={field.input_type === "number" ? "any" : undefined}
                       onKeyDown={(e) => {
-                        if (
-                          field.input_type === "number" &&
-                          ["e", "E"].includes(e.key)
-                        ) {
+                        if (field.input_type === "number" && ["e", "E"].includes(e.key)) {
                           e.preventDefault();
                         }
                       }}
@@ -225,7 +245,21 @@ export function DynamicForm({
           <Button
             type="button"
             variant="outline"
-            onClick={() => setIsCancelAlertOpen(true)}
+            onClick={() => {
+              // Check if form has unsaved changes
+              const hasChanges = Object.keys(watchedValues).some((key) => {
+                const val = watchedValues[key];
+                const initial = initialDataRef.current ? initialDataRef.current[key] ?? "" : "";
+                return val !== "" && val !== null && val !== undefined && val !== initial;
+              });
+
+              if (hasChanges) {
+                setIsCancelAlertOpen(true);
+              } else {
+                onDirtyChange?.(false);
+                onClose();
+              }
+            }}
           >
             Cancel
           </Button>
@@ -254,6 +288,7 @@ export function DynamicForm({
             <AlertDialogAction
               onClick={() => {
                 setIsCancelAlertOpen(false);
+                onDirtyChange?.(false);
                 onClose();
               }}
               className="bg-red-600 hover:bg-red-700"
