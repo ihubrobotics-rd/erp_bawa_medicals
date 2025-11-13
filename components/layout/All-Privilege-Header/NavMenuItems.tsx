@@ -13,50 +13,43 @@ import { createPortal } from "react-dom";
 const SubmoduleMenuItem = ({
   sub,
   isOpen,
-  onToggle,
+  onHoverChange,
   buttonRef,
 }: {
   sub: any;
   isOpen: boolean;
-  onToggle: () => void;
+  onHoverChange: (open: boolean) => void;
   buttonRef: React.RefObject<HTMLButtonElement>;
 }) => {
   const hasFunctionalities = !!(sub.functionalities && sub.functionalities.length);
 
   if (!hasFunctionalities) {
-    // ✅ Simple submodule link (no flyout)
     return (
       <Link
         href={`/manage/${sub.submoduleId}`}
-        className="flex items-center justify-between w-full rounded-md p-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none"
+        className="flex items-center justify-between w-full rounded-md p-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         {sub.name}
       </Link>
     );
   }
 
-  // ✅ Submodule with functionalities (flyout trigger)
   return (
     <button
       ref={buttonRef}
       type="button"
-      onClick={onToggle}
+      onMouseEnter={() => onHoverChange(true)}  // OPEN DELAY
+      onMouseLeave={() => onHoverChange(false)} // CLOSE DELAY
       className={cn(
-        "relative flex items-center justify-between w-full rounded-md p-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none",
+        "relative flex items-center justify-between w-full rounded-md p-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
         isOpen ? "bg-slate-100 dark:bg-slate-800" : ""
       )}
       aria-expanded={isOpen}
     >
       <span>{sub.name}</span>
-      <motion.span
-        animate={{ rotate: isOpen ? 90 : 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        <ChevronRight
-          className="h-4 w-4"
-          color={isOpen ? "orange" : undefined}
-          aria-hidden="true"
-        />
+
+      <motion.span animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+        <ChevronRight className="h-4 w-4" color={isOpen ? "orange" : undefined} />
       </motion.span>
     </button>
   );
@@ -71,12 +64,14 @@ const FlyoutPortal = ({
   open,
   onClose,
   id,
+  cancelCloseTimer, // ⭐ NEW
 }: {
   anchorRect: DOMRect | null;
   items: any[];
   open: boolean;
   onClose: () => void;
   id: string | number;
+  cancelCloseTimer: () => void;  // ⭐ NEW
 }) => {
   const flyoutRef = useRef<HTMLDivElement | null>(null);
   const [style, setStyle] = useState<{ left: number; top: number; transformOrigin?: string } | null>(
@@ -119,23 +114,6 @@ const FlyoutPortal = ({
     setStyle({ left, top, transformOrigin });
   }, [open, anchorRect, items.length]);
 
-  useEffect(() => {
-    if (!open) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      const el = flyoutRef.current;
-      if (el && !el.contains(e.target as Node)) onClose();
-    };
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEsc);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEsc);
-    };
-  }, [open, onClose]);
-
   if (!open || !anchorRect) return null;
 
   return createPortal(
@@ -155,12 +133,16 @@ const FlyoutPortal = ({
           transformOrigin: style?.transformOrigin,
         }}
         className="w-56 bg-background border shadow-lg rounded-md py-1"
+
+        // ⭐ NEW — prevent closing when inside flyout
+        onMouseEnter={cancelCloseTimer}
+        onMouseLeave={onClose}
       >
         {items.map((func: any, idx: number) => (
           <Link
             key={`func-${id}-${func.functionalityId}-${idx}`}
             href={`/manage/functionality/${func.functionalityId}`}
-            className="block px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+            className="block px-3 py-2 text-sm text-foreground hover:bg-accent"
           >
             {func.name}
           </Link>
@@ -177,42 +159,37 @@ const FlyoutPortal = ({
 export const MenuContent = ({ module }: { module: any }) => {
   const [openSubId, setOpenSubId] = useState<number | null>(null);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+
+  const hoverTimer = useRef<NodeJS.Timeout | null>(null);
+  const closeTimer = useRef<NodeJS.Timeout | null>(null);  // ⭐ NEW
   const buttonRefs = useRef<Record<number, HTMLButtonElement | null>>({});
 
-  const handleToggle = (sub: any) => {
+  // ⭐ UPDATED — with OPEN + CLOSE delay
+  const handleHoverChange = (sub: any, shouldOpen: boolean) => {
     const id = sub.submoduleId;
-    const hasFunctionalities = !!(sub.functionalities && sub.functionalities.length);
 
-    if (!hasFunctionalities) return; // skip flyout for simple links
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    if (closeTimer.current) clearTimeout(closeTimer.current);
 
-    if (openSubId === id) {
-      setOpenSubId(null);
-      setAnchorRect(null);
-      return;
+    if (shouldOpen) {
+      // ⭐ OPEN DELAY
+      hoverTimer.current = setTimeout(() => {
+        const btn = buttonRefs.current[id];
+        if (btn) setAnchorRect(btn.getBoundingClientRect());
+        setOpenSubId(id);
+      }, 300);
+    } else {
+      // ⭐ CLOSE DELAY — prevents disappearing too fast
+      closeTimer.current = setTimeout(() => {
+        setOpenSubId(null);
+        setAnchorRect(null);
+      }, 400);
     }
-
-    const btn = buttonRefs.current[id];
-    if (btn) setAnchorRect(btn.getBoundingClientRect());
-    else setAnchorRect(null);
-
-    setOpenSubId(id);
   };
-
-  useEffect(() => {
-    const closeFlyout = () => {
-      setOpenSubId(null);
-      setAnchorRect(null);
-    };
-    window.addEventListener("resize", closeFlyout);
-    window.addEventListener("scroll", closeFlyout, true);
-    return () => {
-      window.removeEventListener("resize", closeFlyout);
-      window.removeEventListener("scroll", closeFlyout, true);
-    };
-  }, []);
 
   const currentSub =
     module.submodules.find((s: any) => s.submoduleId === openSubId) ?? null;
+
   const currentFuncs = currentSub?.functionalities ?? [];
 
   return (
@@ -224,24 +201,29 @@ export const MenuContent = ({ module }: { module: any }) => {
             <SubmoduleMenuItem
               sub={sub}
               isOpen={isOpen}
-              onToggle={() => handleToggle(sub)}
+              onHoverChange={(open) => handleHoverChange(sub, open)}
               buttonRef={(el: HTMLButtonElement) => {
-              buttonRefs.current[sub.submoduleId] = el;
+                buttonRefs.current[sub.submoduleId] = el;
               }}
             />
           </div>
         );
       })}
 
-      {/* Flyout for functionalities */}
       <FlyoutPortal
         id={openSubId ?? "none"}
         anchorRect={anchorRect}
         items={currentFuncs}
         open={!!currentFuncs.length && openSubId !== null}
         onClose={() => {
-          setOpenSubId(null);
-          setAnchorRect(null);
+          if (closeTimer.current) clearTimeout(closeTimer.current);
+          closeTimer.current = setTimeout(() => {
+            setOpenSubId(null);
+            setAnchorRect(null);
+          }, 400); // ⭐ CLOSE DELAY
+        }}
+        cancelCloseTimer={() => {
+          if (closeTimer.current) clearTimeout(closeTimer.current); // ⭐ STOP closing when entering flyout
         }}
       />
     </div>
