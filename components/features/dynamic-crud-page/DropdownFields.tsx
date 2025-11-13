@@ -63,7 +63,6 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
     if (field.mapping) {
       setValue(field.mapping, null, { shouldValidate: true });
     }
-    
     if (field.detail_api && field.mapping) {
       fetchDetailsAndUpdateForm(value);
     }
@@ -82,7 +81,7 @@ export function DynamicDropdown({ field, schema, setValue, watch }) {
   onValueChange={handleValueChange}
   value={currentValue ? currentValue.toString() : ''}
   disabled={isDisabled}
->
+  >
   <SelectTrigger
     className="mt-2 w-full max-w-[250px] truncate overflow-hidden whitespace-nowrap text-ellipsis"
   >
