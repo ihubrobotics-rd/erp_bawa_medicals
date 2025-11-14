@@ -40,12 +40,11 @@ import type { User, Role } from "@/types/medical"
 export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("")
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
+
   const [showUserForm, setShowUserForm] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [viewingUserId, setViewingUserId] = useState<number | null>(null)
-
-
 
   const { usersQuery, deleteUserMutation } = useUsers(debouncedSearchQuery)
   const { rolesQuery } = useRoles()

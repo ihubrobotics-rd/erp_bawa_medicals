@@ -14,31 +14,22 @@ import type { User } from "@/types/medical";
 
 export const useUsers = (searchQuery: string = "") => {
   const queryClient = useQueryClient();
-
   const usersQuery = useQuery<User[]>({
     queryKey: ["users", searchQuery],
     queryFn: () => getUsers(searchQuery),
     refetchOnWindowFocus: true,
   });
-
-  //  Mutation for creating a user with proper error handling
   const createUserMutation = useMutation({
     mutationFn: (userData: CreateUserPayload) => createUser(userData),
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("User created successfully!");
     },
-
     onError: (error: any) => {
-      // Safely extract message and errors
       const response = error?.response?.data;
       const backendMessage = response?.message || "User creation failed.";
       const backendErrors = response?.errors || {};
-
-      // Flatten all error messages
       const errorMessages: string[] = [];
-
       for (const key in backendErrors) {
         if (Array.isArray(backendErrors[key])) {
           backendErrors[key].forEach((msg: string) =>
@@ -46,8 +37,6 @@ export const useUsers = (searchQuery: string = "") => {
           );
         }
       }
-
-      // Show all error messages in Sonner toast
       if (errorMessages.length > 0) {
         errorMessages.forEach((msg) => toast.error(msg));
       } else {

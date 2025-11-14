@@ -10,8 +10,8 @@ import React, {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { RowSelectionState } from '@tanstack/react-table';
-import { Trash2, Pencil, ArrowLeft } from 'lucide-react'; //  IMPORTED ArrowLeft
-import { useRouter } from 'next/navigation'; //  IMPORTED useRouter
+import { Trash2, Pencil, ArrowLeft, X } from 'lucide-react'; // ADDED: X icon
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -58,7 +58,12 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   const [isBackAlertOpen, setIsBackAlertOpen] = useState(false);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [itemsToDelete, setItemsToDelete] = useState<any[]>([]);
-  //  Fetch table data
+  
+  // ADDED: State to track form dirty state
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
+
+  //  Fetch table data
   const {
     data: tableData = [],
     isLoading,
@@ -72,7 +77,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     enabled: !!apiRoutes.get_all,
   });
 
-  //  Build columns dynamically based on API data and schema
+  //  Build columns dynamically based on API data and schema
   const tableColumns = useMemo(() => {
     if (!tableData.length && !formSchema.length) return [];
 
@@ -133,15 +138,17 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     return generatedCols;
   }, [tableData, formSchema]);
 
-  //  Handlers (wrapped in useCallback)
+  //  Handlers (wrapped in useCallback)
   const handleAddNew = useCallback(() => {
     setEditingItem(null);
     setIsFormOpen(true);
+    setIsFormDirty(false); // RESET dirty state when opening form
   }, []);
 
   const handleEdit = useCallback((item: any) => {
     setEditingItem(item);
     setIsFormOpen(true);
+    setIsFormDirty(false); // RESET dirty state when opening form
   }, []);
 
   const handleDeleteClick = useCallback((item: any) => {
@@ -160,10 +167,34 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
     }
   }, [rowSelection, tableData]);
 
+  // ADDED: Handle form dirty state change
+  const handleFormDirtyChange = useCallback((dirty: boolean) => {
+    setIsFormDirty(dirty);
+  }, []);
+
+  // ADDED: Handle dialog close with dirty check
+  const handleDialogClose = useCallback(() => {
+    if (isFormDirty) {
+      setIsCancelAlertOpen(true);
+    } else {
+      setIsFormOpen(false);
+      setEditingItem(null);
+      setIsFormDirty(false);
+    }
+  }, [isFormDirty]);
+
+  // ADDED: Confirm close dialog
+  const confirmCloseDialog = useCallback(() => {
+    setIsCancelAlertOpen(false);
+    setIsFormOpen(false);
+    setEditingItem(null);
+    setIsFormDirty(false);
+  }, []);
+
   // Delete Mutation
   const deleteMutation = useMutation({
     mutationFn: async (ids: number[]) => {
-      //  CHANGED: Check if apiRoutes.delete exists
+      //  CHANGED: Check if apiRoutes.delete exists
       if (!apiRoutes.delete) {
         throw new Error('Delete API route is not defined.');
       }
@@ -196,7 +227,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
   };
 
   const numSelected = Object.keys(rowSelection).length;
-
   const selectedItem = useMemo(() => {
     const selectedIndexes = Object.keys(rowSelection).map(Number);
     if (selectedIndexes.length !== 1) {
@@ -210,8 +240,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       handleEdit(selectedItem);
     }
   }, [selectedItem, handleEdit]);
-
-
 
   const toolbarActions = (
     <div className="flex items-center gap-2">
@@ -234,10 +262,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       )}
     </div>
   );
-
   return (
-
-
     <div className="container mx-auto p-4 md:p-8">
       <div className="relative mb-6">
         {/* Back button positioned above heading with space */}
@@ -255,7 +280,6 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
           {entityData?.name || 'Data'} Management
         </h1>
       </div>
-
       <DynamicTable
         columns={tableColumns}
         data={tableData}
@@ -267,30 +291,40 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
         rowSelection={rowSelection}
         setRowSelection={setRowSelection}
         toolbarActions={toolbarActions}
-
-        // 👈 CHANGED: Use entityData.name for the placeholder
-        searchPlaceholder={`Search ${entityData?.name?.toLowerCase() || 'items'
-          }...`}
-
-      
+        searchPlaceholder={`Search ${entityData?.name?.toLowerCase() || 'items'}...`}
       />
-
       {/* FORM DIALOG */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            {/*  CHANGED: Use entityData.name for dialog titles */}
-            <DialogTitle className="capitalize">
-              {editingItem
-                ? `Edit ${entityData?.name}`
-                : `Add New ${entityData?.name}`}
-            </DialogTitle>
-            <DialogDescription>
-              {editingItem
-                ? `Update the details for this ${entityData?.name}.`
-                : `Fill out the form to create a new ${entityData?.name}.`}
-            </DialogDescription>
-          </DialogHeader>
+      <Dialog open={isFormOpen} onOpenChange={handleDialogClose} >
+        <DialogContent 
+        showCloseButton={false}
+        className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+          {/* ADDED: Close (X) button in header */}
+          <div className="relative">
+            <DialogHeader>
+              <DialogTitle className="capitalize">
+                {editingItem
+                  ? `Edit ${entityData?.name}`
+                  : `Add New ${entityData?.name}`}
+              </DialogTitle>
+              <DialogDescription>
+                {editingItem
+                  ? `Update the details for this ${entityData?.name}.`
+                  : `Fill out the form to create a new ${entityData?.name}.`}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {/* Close (X) button */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-6 w-6 p-0"
+              onClick={handleDialogClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
           <div className="overflow-y-auto pr-4">
             <DynamicForm
               key={editingItem ? editingItem.id : 'new'}
@@ -299,12 +333,16 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
               apiUpdateRoute={apiRoutes.update}
               apiGetAllRoute={apiRoutes.get_all}
               initialData={editingItem}
-              onClose={() => setIsFormOpen(false)}
+              onClose={() => {
+                setIsFormOpen(false);
+                setEditingItem(null);
+                setIsFormDirty(false);
+              }}
+              onDirtyChange={handleFormDirtyChange} // ADDED: Pass dirty state handler
             />
           </div>
         </DialogContent>
       </Dialog>
-
       {/* DELETE CONFIRMATION */}
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
@@ -325,6 +363,27 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ADDED: UNSAVED CHANGES ALERT */}
+      <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Are you sure you want to close? Your changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continue Editing</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCloseDialog}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Discard Changes
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

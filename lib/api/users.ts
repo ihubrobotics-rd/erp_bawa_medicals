@@ -7,7 +7,7 @@ export type CreateUserPayload = {
   username: string;
   email: string;
   mobile: string;
-  role: number; // Role ID
+  role: number; 
   password?: string;
   confirm_password?: string;
 };
