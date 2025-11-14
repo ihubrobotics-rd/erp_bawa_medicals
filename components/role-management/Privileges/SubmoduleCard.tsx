@@ -7,39 +7,52 @@ import type { SubmodulePrivilege, FunctionalityPrivilege } from "@/types/privile
 interface SubmoduleCardProps {
     subPriv: SubmodulePrivilege;
     functionalities: FunctionalityPrivilege[];
+
+    // 🔥 ADDED PROP
+    hasFunctionalities: boolean;
+
     onSubmoduleUpdate: (
         privilege: SubmodulePrivilege,
         key: keyof PrivilegeBase,
         value: boolean
     ) => void;
-     onFunctionalityUpdate: (
+
+    onFunctionalityUpdate: (
         privilege: FunctionalityPrivilege,
         key: keyof PrivilegeBase,
         value: boolean
     ) => void;
+
     isSubmoduleLoading: boolean;
     isFunctionalityLoading: boolean;
 }
 
 export const SubmoduleCard = ({ 
     subPriv,
-    functionalities, 
+    functionalities,
+
+    // 🔥 ADDED
+    hasFunctionalities,
+
     onSubmoduleUpdate,
     onFunctionalityUpdate,
     isSubmoduleLoading,
     isFunctionalityLoading
 }: SubmoduleCardProps) => {
     return (
-        <div
-            className="border rounded-lg p-3 bg-background"
-        >
+        <div className="border rounded-lg p-3 bg-background">
             <div className="flex justify-between items-center flex-wrap gap-4">
                 <h4 className="font-medium text-sm">
                     {subPriv.submodule_name}
                 </h4>
+
                 <PermissionSwitches
                     entityId={`sub-${subPriv.submodule}`}
                     privileges={subPriv}
+
+                    // 🔥 ADDED — hides Add/Edit/Delete if hasFunctionalities = true
+                    hideAdvanced={hasFunctionalities}
+
                     onUpdate={(key, value) => onSubmoduleUpdate(subPriv, key, value)}
                     isLoading={isSubmoduleLoading}
                 />
