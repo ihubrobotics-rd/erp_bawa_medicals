@@ -18,7 +18,7 @@ export const HeaderTopBar = ({ roleName, onLogout }: HeaderTopBarProps) => {
  const { handleBack } = useGlobalBack();
   
   return (
-    <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4" onClick={handleBack}>
+    <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4" >
       <Link href="/" className="flex items-center gap-2 shrink-0">
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
           <span className="text-white font-bold text-lg">B</span>
