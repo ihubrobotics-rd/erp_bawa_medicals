@@ -2,18 +2,12 @@
 
 import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { XIcon } from 'lucide-react'
+import { X } from "lucide-react"
 import { cn } from '@/lib/utils'
+
+
+
 
 function Dialog({
   ...props
@@ -58,64 +52,41 @@ function DialogOverlay({
 function DialogContent({
   className,
   children,
-  showCloseButton = true,
+  // 1. Destructure the prop name you want to use for hiding
+  //    (It looks like you intended to use showCloseButton, but then used hideCloseButton in the logic)
+  //    Let's stick to 'showCloseButton' for clarity, as you defined it in the type.
+  showCloseButton = true, // Defaulting to true (showing the button)
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
+  // 2. Define the type using the same prop name
   showCloseButton?: boolean
 }) {
-  const [showAlert, setShowAlert] = React.useState(false)
-  const closeRef = React.useRef<HTMLButtonElement | null>(null)
-
   return (
-    <>
-      {/* ✅ Main Dialog Portal */}
-      <DialogPrimitive.Portal data-slot="dialog-portal">
-        <DialogPrimitive.Overlay
-          className="data-[state=open]:animate-in data-[state=closed]:animate-out fixed inset-0 z-50 bg-black/50"
-        />
-        <DialogPrimitive.Content
-          data-slot="dialog-content"
-          className={cn(
-            "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
-            className
-          )}
-          {...props}
-        >
-          {children}
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-
-      {/* ✅ Shadcn AlertDialog for confirmation */}
-      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Leave without saving?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to close this dialog? Any unsaved changes
-              will be lost.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowAlert(false)}>
-              Stay
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={() => {
-                setShowAlert(false)
-                closeRef.current?.click() // ✅ triggers actual Radix close
-              }}
-            >
-              Leave
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    
+    <DialogPortal data-slot="dialog-portal">
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        data-slot="dialog-content"
+        className={cn(
+          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
+          className,
+        )}
+        {...props}
+      >
+        {children}
+        
+        {/* 💥 CORRECTED CONDITIONAL RENDERING HERE 💥 */}
+        {/* The close button is rendered ONLY IF showCloseButton is true */}
+        {showCloseButton && (
+          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4" /> 
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        )}
+      </DialogPrimitive.Content>
+    </DialogPortal>
   )
 }
-
-
 
 function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (

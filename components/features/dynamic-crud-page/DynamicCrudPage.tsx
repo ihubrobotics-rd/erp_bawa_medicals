@@ -294,8 +294,10 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
         searchPlaceholder={`Search ${entityData?.name?.toLowerCase() || 'items'}...`}
       />
       {/* FORM DIALOG */}
-      <Dialog open={isFormOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+      <Dialog open={isFormOpen} onOpenChange={handleDialogClose} >
+        <DialogContent 
+        showCloseButton={false}
+        className="sm:max-w-2xl max-h-[90vh] flex flex-col">
           {/* ADDED: Close (X) button in header */}
           <div className="relative">
             <DialogHeader>

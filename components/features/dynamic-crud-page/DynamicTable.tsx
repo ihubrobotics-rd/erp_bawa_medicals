@@ -71,6 +71,8 @@ export function DynamicTable({
 }: DynamicTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [viewRow, setViewRow] = React.useState<DataRow | null>(null);
+
 
   //  Build columns dynamically
   const columns = useMemo<ColumnDef<DataRow>[]>(() => {
