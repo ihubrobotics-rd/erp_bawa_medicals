@@ -249,7 +249,6 @@ export function DynamicTable({
     return <div className="p-4 text-center text-red-500">Error loading data.</div>;
   }
 
-  //  Schema not ready (REMOVED THIS BLOCK)
 
   const hasRows = table.getRowModel().rows.length > 0;
 
@@ -275,7 +274,6 @@ export function DynamicTable({
         )}
         {/* If no search bar, this div keeps the toolbarActions to the right */}
         {!initialColumns?.[0]?.accessorKey && <div className="max-w-sm" />}
-        
         <div className="flex items-center gap-2">{toolbarActions}</div>
       </div>
 

@@ -162,9 +162,8 @@ export default function AdminDashboard() {
             <TabsContent value="settings" className="space-y-6">
               <SystemSettings />
             </TabsContent>
-            
+                                  
           </Tabs>
-
         </div>
       </div>
     </ProtectedRoute>
