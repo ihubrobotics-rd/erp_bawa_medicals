@@ -139,21 +139,30 @@ export const ModuleAccordion = ({
               <div className="space-y-2 p-3 max-h-[450px] overflow-y-auto">
                 {allSubmodulesForModule.length > 0 ? (
                   <>
-                    {visibleSubmodules.map((subPriv) => (
-                      <SubmoduleCard
-                        key={subPriv.id}
-                        subPriv={subPriv}
-                        functionalities={
-                          functionalitiesBySubmodule.get(
-                            subPriv.submodule_name!
-                          ) || []
-                        }
-                        onSubmoduleUpdate={handleSubmoduleUpdate}
-                        onFunctionalityUpdate={handleFunctionalityUpdate}
-                        isSubmoduleLoading={isSubmoduleLoading}
-                        isFunctionalityLoading={isFunctionalityLoading}
-                      />
-                    ))}
+                 {visibleSubmodules.map((subPriv) => {
+  // 🔥 ADDED LINE — check if this submodule has functionalities
+  const hasFunctionalities =
+    (functionalitiesBySubmodule.get(subPriv.submodule_name!) || []).length > 0;
+
+  return (
+    <SubmoduleCard
+      key={subPriv.id}
+      subPriv={subPriv}
+      functionalities={
+        functionalitiesBySubmodule.get(subPriv.submodule_name!) || []
+      }
+
+      // 🔥 ADDED LINE — pass it to SubmoduleCard
+      hasFunctionalities={hasFunctionalities}
+
+      onSubmoduleUpdate={handleSubmoduleUpdate}
+      onFunctionalityUpdate={handleFunctionalityUpdate}
+      isSubmoduleLoading={isSubmoduleLoading}
+      isFunctionalityLoading={isFunctionalityLoading}
+    />
+  );
+})}
+
                     {/* Show More / Show Less Controls */}
                     <div className="text-center pt-2 space-x-4">
                       {/* Show More button only if we still have more submodules to display */}
