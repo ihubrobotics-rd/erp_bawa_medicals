@@ -158,55 +158,62 @@ export function PrivilegesPanel({
   const selectedRole = roles.find((r) => r.id === selectedRoleId);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Set Privileges: {selectedRole?.name}</CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant={isEditMode ? "destructive" : "outline"}
-              onClick={() => setIsEditMode((v) => !v)}
-            >
-              {isEditMode ? "Exit Edit" : "Manage Privileges"}
-            </Button>
-          </div>
+   <Card>
+  {/* ⭐ STICKY HEADER START ⭐ */}
+  <div className="sticky top-0 z-20 bg-white border-b">
+    <CardHeader>
+      <div className="flex items-center justify-between">
+        <CardTitle>Set Privileges: {selectedRole?.name}</CardTitle>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant={isEditMode ? "destructive" : "outline"}
+            onClick={() => setIsEditMode((v) => !v)}
+          >
+            {isEditMode ? "Exit Edit" : "Manage Privileges"}
+          </Button>
         </div>
-        <CardDescription>
-          Click on a module to manage its permissions. Changes are saved
-          automatically.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {allPrivilegesQuery.isLoading ? (
-          <div className="space-y-2 p-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        ) : uniqueModulePrivileges.length > 0 ? (
-          <ModuleAccordion
-            modules={uniqueModulePrivileges}
-            submodulesByModule={submodulesByModule}
-            functionalitiesBySubmodule={functionalitiesBySubmodule}
-            handleSubmoduleUpdate={handleSubmodulePrivilegeUpdate}
-            handleFunctionalityUpdate={handleFunctionalityPrivilegeUpdate}
-            handleModuleViewToggle={handleModuleViewToggle}
-            isSubmoduleLoading={setSubmodulePrivilegeMutation.isPending}
-            isFunctionalityLoading={setFunctionalityPrivilegeMutation.isPending}
-            isModuleLoading={setModulePrivilegeMutation.isPending}
-            editMode={isEditMode}
-            hasNextPage={allPrivilegesQuery.hasNextPage}
-            isFetchingNextPage={allPrivilegesQuery.isFetchingNextPage}
-            fetchNextPage={() => allPrivilegesQuery.fetchNextPage()}
-          />
-        ) : (
-          <div className="p-8 text-center">
-            <p className="text-muted-foreground">
-              No privileges found for this role.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+
+      <CardDescription>
+        Click on a module to manage its permissions. Changes are saved
+        automatically.
+      </CardDescription>
+    </CardHeader>
+  </div>
+  {/* ⭐ STICKY HEADER END ⭐ */}
+
+  <CardContent>
+    {allPrivilegesQuery.isLoading ? (
+      <div className="space-y-2 p-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    ) : uniqueModulePrivileges.length > 0 ? (
+      <ModuleAccordion
+        modules={uniqueModulePrivileges}
+        submodulesByModule={submodulesByModule}
+        functionalitiesBySubmodule={functionalitiesBySubmodule}
+        handleSubmoduleUpdate={handleSubmodulePrivilegeUpdate}
+        handleFunctionalityUpdate={handleFunctionalityPrivilegeUpdate}
+        handleModuleViewToggle={handleModuleViewToggle}
+        isSubmoduleLoading={setSubmodulePrivilegeMutation.isPending}
+        isFunctionalityLoading={setFunctionalityPrivilegeMutation.isPending}
+        isModuleLoading={setModulePrivilegeMutation.isPending}
+        editMode={isEditMode}
+        hasNextPage={allPrivilegesQuery.hasNextPage}
+        isFetchingNextPage={allPrivilegesQuery.isFetchingNextPage}
+        fetchNextPage={() => allPrivilegesQuery.fetchNextPage()}
+      />
+    ) : (
+      <div className="p-8 text-center">
+        <p className="text-muted-foreground">
+          No privileges found for this role.
+        </p>
+      </div>
+    )}
+  </CardContent>
+</Card>
+
   );
 }
