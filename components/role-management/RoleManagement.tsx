@@ -95,25 +95,42 @@ export function RoleManagement() {
         isPending={deactivateRoleMutation.isPending}
       />
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <h4 className="font-medium">System Roles</h4>
-          <RoleList
-            roles={roles}
-            isLoading={rolesQuery.isLoading}
-            selectedRoleId={selectedRoleId}
-            onSelectRole={setSelectedRoleId}
-            onEdit={handleOpenEditDialog}
-            onDeactivate={handleOpenDeactivateAlert}
-          />
-        </div>
+  <div className="grid lg:grid-cols-2 gap-6 h-[80vh]">
 
-        <PrivilegesPanel 
-          selectedRoleId={selectedRoleId} 
-          roles={roles} 
-        />
-        
-      </div>
+    {/* LEFT SIDE */}
+    <div className="flex flex-col overflow-hidden">
+    <h4 className="font-medium sticky top-0 bg-white z-10 py-2">
+      System Roles
+    </h4>
+
+    <div className="overflow-y-auto mt-2 p-6" >
+      <RoleList
+        roles={roles}
+        isLoading={rolesQuery.isLoading}
+        selectedRoleId={selectedRoleId}
+        onSelectRole={setSelectedRoleId}
+        onEdit={handleOpenEditDialog}
+        onDeactivate={handleOpenDeactivateAlert}
+      />
+    </div>
+  </div>
+
+  {/* RIGHT SIDE */}
+  <div className="flex flex-col overflow-hidden">
+    <h4 className="font-medium sticky top-0 bg-white z-10 py-2">
+      Privileges
+    </h4>
+
+    <div className="overflow-y-auto mt-2">
+      <PrivilegesPanel 
+        selectedRoleId={selectedRoleId} 
+        roles={roles} 
+      />
+    </div>
+  </div>
+
+</div>
+
     </div>
   );
 }
