@@ -24,6 +24,7 @@ export type Functionality = {
   description: string;
   submodule: number; // Foreign key ID
   submodule_name?: string;
+  is_active: boolean;
   created_at: string;
 };
 

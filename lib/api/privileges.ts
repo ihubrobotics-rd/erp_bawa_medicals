@@ -49,7 +49,7 @@ export const setSubmodulePrivilege = async (
 export const setFunctionalityPrivilege = async (
   payload: Omit<
     FunctionalityPrivilege,
-    "id" | "role_name" | "functionality_name" | "submodule_name" | "module_name"
+    "id" | "role_name" | "functionality_name" | "submodule_name" | "module_name" | "created_at"
   >
 ): Promise<FunctionalityPrivilege> => {
   const { data } = await api.post(

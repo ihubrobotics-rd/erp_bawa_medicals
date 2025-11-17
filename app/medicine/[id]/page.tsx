@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ import { MedicalHeader } from "@/components/layout/medical-header"
 import Footer from "@/components/layout/footer"
 
 export default function MedicineDetailPage({ params }: { params: { id: string } }) {
-  const { id } = use(params)
+  const { id } = params
   const [product, setProduct] = useState<any>(null)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)

@@ -158,7 +158,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
 
   const handleBulkDeleteClick = useCallback(() => {
     const selectedIndexes = Object.keys(rowSelection).map(Number);
-    const selectedItems = tableData.filter((_, idx) =>
+    const selectedItems = tableData.filter((_: unknown, idx: number) =>
       selectedIndexes.includes(idx)
     );
     if (selectedItems.length) {

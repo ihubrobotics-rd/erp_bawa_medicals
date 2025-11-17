@@ -37,7 +37,7 @@ const userSchema = z
     role: z.coerce.number({ invalid_type_error: "Please select a role" }),
     password: z.string().optional(),
     confirm_password: z.string().optional(),
-    is_active: z.boolean().default(true),
+    is_active: z.boolean(),
   })
   .refine((data) => data.password === data.confirm_password, {
     message: "Passwords don't match",
@@ -56,6 +56,7 @@ export function UserForm({ user, roles, onClose }: UserFormProps) {
   const isEditMode = !!user
   const { createUserMutation, updateUserMutation } = useUsers()
   const { toast } = useToast()
+  const defaultRoleId = roles[0]?.id ?? 0
 
   const {
     register,
@@ -66,6 +67,12 @@ export function UserForm({ user, roles, onClose }: UserFormProps) {
   } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
+      username: "",
+      email: "",
+      mobile: "",
+      role: defaultRoleId,
+      password: "",
+      confirm_password: "",
       is_active: true,
     },
   })
@@ -84,13 +91,13 @@ export function UserForm({ user, roles, onClose }: UserFormProps) {
         username: "",
         email: "",
         mobile: "",
-        role: undefined,
+        role: defaultRoleId,
         password: "",
         confirm_password: "",
         is_active: true,
       })
     }
-  }, [user, isEditMode, reset])
+  }, [user, isEditMode, reset, defaultRoleId])
 
   const onSubmit = async (data: UserFormData) => {
     try {
@@ -151,7 +158,10 @@ export function UserForm({ user, roles, onClose }: UserFormProps) {
               name="role"
               control={control}
               render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                <Select
+                  onValueChange={(value) => field.onChange(Number(value))}
+                  value={field.value ? String(field.value) : ""}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
