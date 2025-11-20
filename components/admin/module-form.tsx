@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { useModules } from "@/hooks/useModules";
 import type { Module } from "@/types/modules";
 import { Button } from "@/components/ui/button";
@@ -17,15 +18,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
 
 // -----------------------------
-// FIXED ZOD SCHEMA
+// ZOD SCHEMA
 // -----------------------------
 const moduleSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().min(1, "Description is required"),
-  is_active: z.boolean(), // REQUIRED — no default() to avoid resolver conflict
+  is_active: z.boolean(),
 });
 
 type ModuleFormData = z.infer<typeof moduleSchema>;
@@ -38,7 +38,6 @@ interface ModuleFormProps {
 export function ModuleForm({ module, onClose }: ModuleFormProps) {
   const isEditMode = !!module;
   const { createModuleMutation, updateModuleMutation } = useModules();
-  const { toast } = useToast();
 
   // -----------------------------
   // REACT HOOK FORM SETUP
@@ -78,37 +77,90 @@ export function ModuleForm({ module, onClose }: ModuleFormProps) {
   }, [module, reset]);
 
   // -----------------------------
-  // FORM SUBMIT HANDLER
+  // TANSTACK QUERY ERROR HANDLERS
   // -----------------------------
-  const onSubmit: SubmitHandler<ModuleFormData> = async (data) => {
-    try {
-      if (isEditMode && module) {
-        await updateModuleMutation.mutateAsync({
-          id: module.id,
-          payload: data,
-        });
-
-        toast({
-          title: "Success",
-          description: "Module updated successfully.",
+  useEffect(() => {
+    if (createModuleMutation.isError) {
+      const error: any = createModuleMutation.error;
+      
+      // Check if error has validation errors from API
+      if (error?.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        
+        // Display each field error
+        Object.entries(errors).forEach(([field, messages]) => {
+          const errorMessages = Array.isArray(messages) ? messages : [messages];
+          errorMessages.forEach((msg: string) => {
+            toast.error(`${field}: ${msg}`);
+          });
         });
       } else {
-        await createModuleMutation.mutateAsync(data);
-
-        toast({
-          title: "Success",
-          description: "Module created successfully.",
+        // Fallback to general error message
+        toast.error("Failed to create module", {
+          description:
+            error?.response?.data?.message ||
+            error?.message ||
+            "An error occurred while creating the module.",
         });
       }
+    }
+  }, [createModuleMutation.isError, createModuleMutation.error]);
 
+  useEffect(() => {
+    if (updateModuleMutation.isError) {
+      const error: any = updateModuleMutation.error;
+      
+      // Check if error has validation errors from API
+      if (error?.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        
+        // Display each field error
+        Object.entries(errors).forEach(([field, messages]) => {
+          const errorMessages = Array.isArray(messages) ? messages : [messages];
+          errorMessages.forEach((msg: string) => {
+            toast.error(`${field}: ${msg}`);
+          });
+        });
+      } else {
+        // Fallback to general error message
+        toast.error("Failed to update module", {
+          description:
+            error?.response?.data?.message ||
+            error?.message ||
+            "An error occurred while updating the module.",
+        });
+      }
+    }
+  }, [updateModuleMutation.isError, updateModuleMutation.error]);
+
+  // -----------------------------
+  // TANSTACK QUERY SUCCESS HANDLERS
+  // -----------------------------
+  useEffect(() => {
+    if (createModuleMutation.isSuccess) {
+      toast.success("Module created successfully");
       onClose();
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "An error occurred.",
+    }
+  }, [createModuleMutation.isSuccess, onClose]);
+
+  useEffect(() => {
+    if (updateModuleMutation.isSuccess) {
+      toast.success("Module updated successfully");
+      onClose();
+    }
+  }, [updateModuleMutation.isSuccess, onClose]);
+
+  // -----------------------------
+  // FORM SUBMIT HANDLER
+  // -----------------------------
+  const onSubmit: SubmitHandler<ModuleFormData> = (data) => {
+    if (isEditMode && module) {
+      updateModuleMutation.mutate({
+        id: module.id,
+        payload: data,
       });
+    } else {
+      createModuleMutation.mutate(data);
     }
   };
 
