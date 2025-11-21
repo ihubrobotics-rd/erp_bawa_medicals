@@ -27,6 +27,7 @@ export function EmployeeForm({ initialData, onSubmit, isLoading = false, mode = 
       salary: initialData?.salary || 0,
       hireDate: initialData?.hireDate || "",
       managerId: initialData?.managerId || "",
+      isActive: initialData?.isActive ?? true,
     },
   })
 

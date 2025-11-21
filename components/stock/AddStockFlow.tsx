@@ -320,7 +320,7 @@ const CameraCaptureStep = ({
           </Button>
           <Button
             onClick={onGenerate}
-            disabled={capturedProducts.some((p) => p.images.length === 0) || isLoading}
+            disabled={capturedProducts.some((p: CapturedProduct) => p.images.length === 0) || isLoading}
             size="lg"
             className="w-full"
           >
@@ -384,16 +384,19 @@ const CompareStep = ({ generated, scanned, onConfirm, onBack, isLoading }: any) 
     <CardHeader className="text-center px-0 pt-0"><CardTitle>Step 4: Verify Mismatches</CardTitle><CardDescription>Review differences for each product between the captured data and the physical invoice.</CardDescription></CardHeader>
     <div className="space-y-4">
       {generated.map((genItem: GeneratedInvoice, index: number) => {
-        const scanItem = scanned.find((s: GeneratedInvoice) => s.id === genItem.id) || {};
+        const scanItem = scanned.find((s: GeneratedInvoice) => s.id === genItem.id) ?? ({} as Partial<GeneratedInvoice>);
+        const keys = Object.keys(genItem) as Array<keyof GeneratedInvoice>;
         return (
           <Card key={genItem.id}>
             <CardHeader><CardTitle className="text-lg">{genItem.medicineName}</CardTitle></CardHeader>
             <CardContent>
               <div className="border rounded-lg">
                 <div className="grid grid-cols-3 font-semibold p-3 bg-muted text-sm"><div className="pl-2">Field</div><div className="text-center">From Product Images</div><div className="text-center">From Physical Invoice</div></div>
-                {Object.keys(genItem).map(key => {
+                {keys.map(key => {
                   if (key === 'id') return null;
-                  const isMatch = genItem[key] === scanItem[key];
+                  const isMatch = Object.prototype.hasOwnProperty.call(scanItem, key)
+                    ? genItem[key] === scanItem[key]
+                    : false;
                   return (
                     <div key={key} className={cn("grid grid-cols-3 p-2 border-t items-center", !isMatch && "bg-red-500/10")}>
                       <div className="font-medium text-sm pl-2">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</div>

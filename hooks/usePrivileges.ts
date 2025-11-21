@@ -24,7 +24,7 @@ type SubmodulePrivilegePayload = Omit<
 
 type FunctionalityPrivilegePayload = Omit<
   FunctionalityPrivilege,
-  "id" | "role_name" | "functionality_name" | "submodule_name" | "module_name"
+  "id" | "role_name" | "functionality_name" | "submodule_name" | "module_name" | "created_at"
 >;
 
 export const usePrivileges = (roleId: number | null) => {

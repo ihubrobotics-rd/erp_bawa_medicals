@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, SubmitHandler, FieldValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -22,9 +22,31 @@ import {
   AlertDialogDescription,
   AlertDialogCancel,
   AlertDialogAction,
-
 } from "@/components/ui/alert-dialog"; 
 
+// Define types - Updated to match actual usage
+interface FieldSchema {
+  id: string;
+  input_name: string;
+  label: string;
+  is_required?: boolean;
+  input_type?: string;
+  placeholder?: string;
+  values?: Array<{ label: string; value: string }> | string; // Can be array or string
+  options_api?: string;
+  detail_api?: string;
+  mapping?: string;
+}
+
+interface DynamicFormProps {
+  schema: FieldSchema[];
+  apiCreateRoute: string;
+  apiUpdateRoute: string;
+  apiGetAllRoute: string;
+  initialData?: Record<string, any> | null;
+  onClose: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
+}
 
 const defaultRadioOptions = [
   { label: "Yes", value: "true" },
@@ -38,12 +60,11 @@ export function DynamicForm({
   apiGetAllRoute,
   initialData = null,
   onClose,
-  onDirtyChange, // ✅ parent handler
-}) {
+  onDirtyChange,
+}: DynamicFormProps) {
   const queryClient = useQueryClient();
   const isEditMode = !!initialData;
 
-  // Add state hook here
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   const initialDataRef = useRef(initialData);
 
@@ -70,17 +91,15 @@ export function DynamicForm({
     }
   }, [initialData, reset, isEditMode]);
 
-  // ✅ Watch for manual user input
+  // Watch for manual user input
   const watchedValues = watch();
 
   useEffect(() => {
     if (!onDirtyChange) return;
 
-    // Compare current values to initial
     const hasInput = Object.keys(watchedValues).some((key) => {
       const val = watchedValues[key];
       const initial = initialDataRef.current ? initialDataRef.current[key] ?? "" : "";
-      // Detect any actual input/change
       return val !== "" && val !== null && val !== undefined && val !== initial;
     });
 
@@ -88,9 +107,9 @@ export function DynamicForm({
   }, [watchedValues, onDirtyChange]);
 
   const mutation = useMutation({
-    mutationFn: async (formData: any) => {
+    mutationFn: async (formData: Record<string, any>) => {
       const endpoint = isEditMode
-        ? apiUpdateRoute.replace("<int:pk>", String(initialData.id))
+        ? apiUpdateRoute.replace("<int:pk>", String(initialData?.id))
         : apiCreateRoute;
       const method = isEditMode ? api.put : api.post;
       const res = await method(endpoint, formData);
@@ -104,7 +123,7 @@ export function DynamicForm({
       queryClient.invalidateQueries({
         queryKey: ["tableData", apiGetAllRoute],
       });
-      onDirtyChange?.(false); // ✅ Reset dirty flag
+      onDirtyChange?.(false);
       onClose();
     },
     onError: (error: any) => {
@@ -112,13 +131,13 @@ export function DynamicForm({
       const message = backendData?.message || "An unexpected error occurred.";
       const fieldErrors = backendData?.errors || {};
       const details = Object.entries(fieldErrors)
-        .map(([k, v]) => `${k}: ${(v as string[]).join(", ")}`)
+        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`)
         .join("\n");
       toast.error(`${message}${details ? "\n" + details : ""}`);
     },
   });
 
-  const onSubmit = (data: any) => {
+  const onSubmit: SubmitHandler<FieldValues> = (data) => {
     const sanitizedData = { ...data };
     Object.keys(sanitizedData).forEach((key) => {
       if (sanitizedData[key] === "true") sanitizedData[key] = true;
@@ -130,7 +149,6 @@ export function DynamicForm({
     mutation.mutate(sanitizedData);
   };
 
-  // Entire UI goes inside one return 
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col space-y-6">
@@ -163,7 +181,8 @@ export function DynamicForm({
                   }
 
                   if (field.input_type === "radio") {
-                    const radioOptions = field.values?.length
+                    // Type guard to check if values is an array
+                    const radioOptions = (Array.isArray(field.values) && field.values.length)
                       ? field.values
                       : defaultRadioOptions;
                     return (
@@ -173,10 +192,10 @@ export function DynamicForm({
                         render={({ field: ctrl }) => (
                           <RadioGroup
                             onValueChange={ctrl.onChange}
-                            value={String(ctrl.value)}
+                            value={String(ctrl.value ?? "")}
                             className="flex flex-wrap gap-3 pt-2"
                           >
-                            {radioOptions.map((option: any) => (
+                            {radioOptions.map((option) => (
                               <div key={option.value} className="flex items-center space-x-2">
                                 <RadioGroupItem
                                   value={option.value}
@@ -222,7 +241,7 @@ export function DynamicForm({
                       min={field.input_type === "number" ? 0 : undefined}
                       step={field.input_type === "number" ? "any" : undefined}
                       onKeyDown={(e) => {
-                        if (field.input_type === "number" && ["e", "E"].includes(e.key)) {
+                        if (field.input_type === "number" && ["e", "E", "+", "-"].includes(e.key)) {
                           e.preventDefault();
                         }
                       }}
@@ -233,7 +252,7 @@ export function DynamicForm({
 
                 {errors[field.input_name] && (
                   <p className="text-xs text-red-500 mt-1">
-                    {errors[field.input_name]?.message as string}
+                    {String(errors[field.input_name]?.message || "")}
                   </p>
                 )}
               </div>
@@ -241,13 +260,11 @@ export function DynamicForm({
           ))}
         </div>
 
-        {/* Cancel + Save buttons */}
         <div className="flex flex-col justify-end gap-3 border-t pt-6 sm:flex-row">
           <Button
             type="button"
             variant="outline"
             onClick={() => {
-              // Check if form has unsaved changes
               const hasChanges = Object.keys(watchedValues).some((key) => {
                 const val = watchedValues[key];
                 const initial = initialDataRef.current ? initialDataRef.current[key] ?? "" : "";
@@ -275,7 +292,6 @@ export function DynamicForm({
         </div>
       </form>
 
-      {/* Add the alert dialog here, after the form */}
       <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import type { Ref } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,7 @@ const SubmoduleMenuItem = ({
   sub: any;
   isOpen: boolean;
   onHoverChange: (open: boolean) => void;
-  buttonRef: React.RefObject<HTMLButtonElement>;
+  buttonRef: Ref<HTMLButtonElement>;
 }) => {
   const hasFunctionalities = !!(sub.functionalities && sub.functionalities.length);
 

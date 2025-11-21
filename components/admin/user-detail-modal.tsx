@@ -90,10 +90,14 @@ export function UserDetailModal({ userId, roles, onClose }: UserDetailModalProps
             />
             <DetailRow
               label="Joined On"
-              value={new Date(user.created_at).toLocaleString("en-IN", {
-                dateStyle: "long",
-                timeStyle: "short",
-              })}
+              value={
+                user.created_at
+                  ? new Date(user.created_at).toLocaleString("en-IN", {
+                      dateStyle: "long",
+                      timeStyle: "short",
+                    })
+                  : "N/A"
+              }
             />
           </div>
         )}

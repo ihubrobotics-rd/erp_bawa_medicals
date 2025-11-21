@@ -18,14 +18,22 @@ interface UserFormProps {
   mode?: "create" | "edit"
 }
 
-export function UserForm({ initialData, onSubmit, isLoading = false, mode = "create" }: UserFormProps) {
-  const form = useForm<UserFormData>({
+export function UserForm({
+  initialData,
+  onSubmit,
+  isLoading = false,
+  mode = "create",
+}: UserFormProps) {
+
+  // ✅ FIX: Explicit generics prevent the "Control type mismatch" error
+  const form = useForm<UserFormData, any, UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      name: initialData?.name || "",
+      username: initialData?.username || "",
       email: initialData?.email || "",
       role: initialData?.role || UserRole.EMPLOYEE,
       password: "",
+      confirmPassword: "",
     },
   })
 
@@ -48,12 +56,15 @@ export function UserForm({ initialData, onSubmit, isLoading = false, mode = "cre
           {mode === "create" ? "Add a new user to the system" : "Update user information"}
         </CardDescription>
       </CardHeader>
+
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+
+            {/* Name */}
             <FormField
               control={form.control}
-              name="name"
+              name="username"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
@@ -64,6 +75,8 @@ export function UserForm({ initialData, onSubmit, isLoading = false, mode = "cre
                 </FormItem>
               )}
             />
+
+            {/* Email */}
             <FormField
               control={form.control}
               name="email"
@@ -77,6 +90,8 @@ export function UserForm({ initialData, onSubmit, isLoading = false, mode = "cre
                 </FormItem>
               )}
             />
+
+            {/* Role */}
             <FormField
               control={form.control}
               name="role"
@@ -101,30 +116,56 @@ export function UserForm({ initialData, onSubmit, isLoading = false, mode = "cre
                 </FormItem>
               )}
             />
+
+            {/* Password (only for create mode) */}
             {mode === "create" && (
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="Enter password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Enter password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Confirm password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
+
+            {/* Actions */}
             <div className="flex gap-2">
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {mode === "create" ? "Create User" : "Update User"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => form.reset()}>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => form.reset()}
+              >
                 Reset
               </Button>
             </div>
+
           </form>
         </Form>
       </CardContent>
