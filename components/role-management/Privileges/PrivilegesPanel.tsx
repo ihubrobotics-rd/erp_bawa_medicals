@@ -160,7 +160,7 @@ export function PrivilegesPanel({
   return (
    <Card>
   {/* ⭐ STICKY HEADER START ⭐ */}
-  <div className="sticky top-0 z-20 bg-white border-b">
+  <div className="sticky top-0 z-20 bg-white dark:bg-neutral-900 border-b">
     <CardHeader>
       <div className="flex items-center justify-between">
         <CardTitle>Set Privileges: {selectedRole?.name}</CardTitle>
