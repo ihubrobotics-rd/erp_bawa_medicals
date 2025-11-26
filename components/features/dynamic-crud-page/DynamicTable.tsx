@@ -256,6 +256,7 @@ export function DynamicTable({
 
 
   const hasRows = table.getRowModel().rows.length > 0;
+  
 
   return (
     <div className="w-full space-y-4">

@@ -58,8 +58,9 @@ const getOptionLabel = (option: Option, field: Field): string => {
     'transport_type',
     'currency_code',
     'username',
-    'category_name'
-  ];
+    'category_name',
+    
+     ];
   for (const key of fallbackKeys) {
     if (option[key]) return String(option[key]);
   }
@@ -79,6 +80,8 @@ export function DynamicDropdown({ field, schema, setValue, watch }: DynamicDropd
     queryFn: async () => {
       if (!field.options_api) return [];
       const res = await api.get(field.options_api);
+
+      
       return res.data.data?.results || res.data.data || [];
     },
     enabled: !!field.options_api,
