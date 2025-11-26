@@ -75,7 +75,7 @@ export const MegaMenuNav = ({ navigationTree, isLoading }: MegaMenuNavProps) => 
       <nav
         ref={navRef}
         {...grabScrollProps}
-        className="container mx-auto flex items-center gap-6 px-4 py-2 overflow-x-auto hide-scrollbar grabbable"
+        className="container mx-auto flex items-center gap-6 px-4 py-4 overflow-x-auto hide-scrollbar grabbable"
       >
         {navigationTree &&
           Array.from(navigationTree.values()).map((module: any) => (

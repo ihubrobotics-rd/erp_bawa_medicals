@@ -161,6 +161,8 @@ export default function StockManagement() {
     <div className="min-h-screen bg-background">
       <SuperAdminHeader />
       <div className="container mx-auto px-4 py-6">
+
+        {/* top card list */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -260,10 +262,10 @@ export default function StockManagement() {
                   </SelectContent>
                 </Select>
 
-                <Button variant="outline">
+                {/* <Button variant="outline">
                   <Filter className="w-4 h-4 mr-2" />
                   More Filters
-                </Button>
+                </Button> */}
               </div>
             </div>
 

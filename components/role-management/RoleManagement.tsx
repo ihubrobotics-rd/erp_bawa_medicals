@@ -9,7 +9,7 @@ import { CreateRoleDialog } from "./RoleDialogs/CreateRoleDialog";
 import { EditRoleDialog } from "./RoleDialogs/EditRoleDialog";
 import { DeactivateRoleDialog } from "./RoleDialogs/DeactivateRoleDialog";
 import { useRoles } from "@/hooks/useRoles";
-import type { Role } from "@/lib/api/roles";
+import type { Role, CreateRolePayload } from "@/lib/api/roles";
 
 export function RoleManagement() {
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
@@ -26,7 +26,7 @@ export function RoleManagement() {
   } = useRoles();
   const roles: Role[] = rolesQuery.data || [];
 
-  const handleCreateRole = async (data: Omit<Role, 'id'>) => {
+  const handleCreateRole = async (data: CreateRolePayload) => {
     await createRoleMutation.mutateAsync(data);
     setIsCreateOpen(false);
   };
@@ -99,7 +99,7 @@ export function RoleManagement() {
 
     {/* LEFT SIDE */}
     <div className="flex flex-col overflow-hidden">
-    <h4 className="font-medium sticky top-0 bg-white z-10 py-2">
+    <h4 className="font-medium sticky top-0  z-10 py-2">
       System Roles
     </h4>
 
@@ -117,7 +117,7 @@ export function RoleManagement() {
 
   {/* RIGHT SIDE */}
   <div className="flex flex-col overflow-hidden">
-    <h4 className="font-medium sticky top-0 bg-white z-10 py-2">
+    <h4 className="font-medium sticky top-0 z-10 py-2">
       Privileges
     </h4>
 

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z, type ZodTypeAny } from "zod";
 
 // Generates Zod schema dynamically based on field definitions
 export const generateZodSchema = (functionDefinitions: any[]) => {
@@ -30,7 +30,7 @@ export const generateZodSchema = (functionDefinitions: any[]) => {
 
       // Radio fields
       case "radio": {
-        const values = field.values?.map((v: any) => v.value) ?? [];
+        const values = field.values?.map((v: any) => v.value) ?? []
 
         const isBooleanField = values.every(
           (v: any) =>
@@ -38,24 +38,34 @@ export const generateZodSchema = (functionDefinitions: any[]) => {
             v === false ||
             v === "true" ||
             v === "false"
-        );
+        )
 
         if (isBooleanField) {
-          // Boolean-like radio
           validator = z
             .union([
               z.boolean(),
               z.literal("true"),
               z.literal("false"),
             ])
-            .transform((val) => val === true || val === "true");
+            .transform((val) => val === true || val === "true")
         } else if (Array.isArray(values) && values.length > 0) {
-          // String-based radio options
-          validator = z.union(values.map((v: any) => z.literal(String(v))));
+          const literalValues = values.map((v: any) => z.literal(String(v)))
+          if (literalValues.length === 1) {
+            validator = literalValues[0]
+          } else {
+            const [first, second, ...rest] = literalValues
+            validator = z.union(
+              [first, second, ...rest] as [
+                ZodTypeAny,
+                ZodTypeAny,
+                ...ZodTypeAny[],
+              ],
+            )
+          }
         } else {
-          validator = z.string();
+          validator = z.string()
         }
-        break;
+        break
       }
       // Default case — treat as string input
       default:
@@ -71,7 +81,7 @@ export const generateZodSchema = (functionDefinitions: any[]) => {
         validator = validator.min(1, { message: `${field.label} is required.` });
       } else if (typeName === "ZodNumber") {
         validator = validator.refine(
-          (val) => val !== null && val !== undefined,
+          (val: unknown) => val !== null && val !== undefined,
           { message: `${field.label} is required.` }
         );
       }

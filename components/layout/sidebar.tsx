@@ -106,7 +106,7 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
           <div className="mb-4 p-3 bg-muted rounded-lg">
             <p className="text-sm font-medium">{user?.name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.role.replace("-", " ")}</p>
+            <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
           </div>
           <ScrollArea className="h-[calc(100vh-200px)]">
             <div className="space-y-1">

@@ -29,7 +29,7 @@ const mockStats = {
 
 export default function AdminDashboard() {
   return (
-    <ProtectedRoute allowedRoles={["super admin"]}>
+    <ProtectedRoute allowedRoles={["Super admin", "super admin"]}>
       <div className="min-h-screen bg-background">
         <SuperAdminHeader />
         <div className="container mx-auto px-4 py-6">

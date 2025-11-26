@@ -25,6 +25,7 @@ interface SubmoduleCardProps {
 
     isSubmoduleLoading: boolean;
     isFunctionalityLoading: boolean;
+     editMode?: boolean;
 }
 
 export const SubmoduleCard = ({ 
@@ -37,7 +38,9 @@ export const SubmoduleCard = ({
     onSubmoduleUpdate,
     onFunctionalityUpdate,
     isSubmoduleLoading,
-    isFunctionalityLoading
+    isFunctionalityLoading,
+    // ⭐ CHANGE
+    editMode = false
 }: SubmoduleCardProps) => {
     return (
         <div className="border rounded-lg p-3 bg-background">
@@ -45,17 +48,18 @@ export const SubmoduleCard = ({
                 <h4 className="font-medium text-sm">
                     {subPriv.submodule_name}
                 </h4>
-
                 <PermissionSwitches
-                    entityId={`sub-${subPriv.submodule}`}
-                    privileges={subPriv}
-
-                    // 🔥 ADDED — hides Add/Edit/Delete if hasFunctionalities = true
-                    hideAdvanced={hasFunctionalities}
-
-                    onUpdate={(key, value) => onSubmoduleUpdate(subPriv, key, value)}
-                    isLoading={isSubmoduleLoading}
+                entityId={`sub-${subPriv.submodule}`}
+                privileges={subPriv}
+                hideAdvanced={hasFunctionalities}
+                onUpdate={(key, value) => {
+                    if (!editMode) return;         // ⭐ CHANGE — block action
+                    onSubmoduleUpdate(subPriv, key, value);
+                }}
+                isLoading={isSubmoduleLoading || !editMode} // ⭐ CHANGE — disable switches
+                disabled={!editMode}                        // ⭐ CHANGE
                 />
+
             </div>
             
             {functionalities && functionalities.length > 0 && (
@@ -66,6 +70,7 @@ export const SubmoduleCard = ({
                             funcPriv={funcPriv}
                             onUpdate={onFunctionalityUpdate}
                             isLoading={isFunctionalityLoading}
+                            editMode={editMode}   // ⭐ IMPORTANT LINE
                         />
                     ))}
                 </div>

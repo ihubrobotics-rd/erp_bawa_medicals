@@ -2,6 +2,7 @@
 
 import React, { useMemo, Dispatch, SetStateAction } from "react";
 import {
+  Column,
   ColumnDef,
   RowSelectionState,
   flexRender,
@@ -165,10 +166,12 @@ export function DynamicTable({
       },
       ...initialColumns.map((col) => ({
         accessorKey: col.accessorKey,
-        header: ({ column }) => (
+        header: ({ column }: { column: Column<DataRow, unknown> }) => (
           <Button
             variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            onClick={() =>
+              column.toggleSorting(column.getIsSorted() === "asc")
+            }
           >
             {col.header}
             <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -253,6 +256,7 @@ export function DynamicTable({
 
 
   const hasRows = table.getRowModel().rows.length > 0;
+  
 
   return (
     <div className="w-full space-y-4">

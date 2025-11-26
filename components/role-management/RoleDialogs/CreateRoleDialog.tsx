@@ -12,14 +12,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import type { Role } from "@/lib/api/roles";
-
-type CreateRoleData = Omit<Role, "id">;
+import type { CreateRolePayload } from "@/lib/api/roles";
 
 interface CreateRoleDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onCreateRole: (data: CreateRoleData) => Promise<void>;
+  onCreateRole: (data: CreateRolePayload) => Promise<void>;
   isPending: boolean;
 }
 

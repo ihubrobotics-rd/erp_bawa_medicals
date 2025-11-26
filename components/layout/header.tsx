@@ -29,9 +29,9 @@ export function Header() {
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name} />
                   <AvatarFallback>
-                    {user?.name
+                  {user?.name
                       ?.split(" ")
-                      .map((n) => n[0])
+                      .map((n: string) => n[0])
                       .join("")
                       .toUpperCase()}
                   </AvatarFallback>

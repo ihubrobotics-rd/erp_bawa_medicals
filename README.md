@@ -82,7 +82,7 @@ Token is auto-attached to every request via Axios interceptors.
 
 The entire navigation is generated dynamically from backend privileges.
 
-API: /Privilege/role/privileges/:roleId/
+API: /privilege/role/privileges/:roleId/
 
 Modules/submodules update instantly if permissions change — no reload needed.
 

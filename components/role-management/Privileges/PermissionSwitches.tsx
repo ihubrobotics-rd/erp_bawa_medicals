@@ -17,7 +17,8 @@ export const PermissionSwitches = ({
   isLoading,
   entityId,
   // 🔥 ADDED
-  hideAdvanced = false
+  hideAdvanced = false,
+  disabled = false,     // ⭐ NEW PROP
 }: {
   privileges: PrivilegeBase;
   onUpdate: (key: keyof PrivilegeBase, value: boolean) => void;
@@ -26,6 +27,7 @@ export const PermissionSwitches = ({
 
   // 🔥 ADDED
   hideAdvanced?: boolean;
+   disabled?: boolean;    // ⭐ EXPOSE IT IN TYPE
 }) => {
 
   // 🔥 FILTER KEYS BASED ON hideAdvanced FLAG
@@ -41,7 +43,8 @@ export const PermissionSwitches = ({
             id={`${key}-${entityId}`}
             checked={privileges[key]}
             onCheckedChange={(value) => onUpdate(key, !!value)}
-            disabled={isLoading}
+            // disabled={isLoading}
+             disabled={isLoading || disabled}  // ⭐ APPLY HERE
             className="cursor-pointer"
           />
           <label

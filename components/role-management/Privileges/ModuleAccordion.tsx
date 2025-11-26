@@ -159,6 +159,7 @@ export const ModuleAccordion = ({
       onFunctionalityUpdate={handleFunctionalityUpdate}
       isSubmoduleLoading={isSubmoduleLoading}
       isFunctionalityLoading={isFunctionalityLoading}
+        editMode={editMode}
     />
   );
 })}

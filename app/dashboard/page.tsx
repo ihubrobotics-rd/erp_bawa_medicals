@@ -311,7 +311,7 @@ export default function DashboardPage() {
                 {user.role === UserRole.ADMIN && (
                   <>
                     <button className="w-full text-left p-2 hover:bg-muted rounded-md text-sm">
-                      Add New User
+                      Add New User 
                     </button>
                     <button className="w-full text-left p-2 hover:bg-muted rounded-md text-sm">
                       View Reports

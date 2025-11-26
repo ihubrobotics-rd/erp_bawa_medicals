@@ -158,7 +158,7 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
 
   const handleBulkDeleteClick = useCallback(() => {
     const selectedIndexes = Object.keys(rowSelection).map(Number);
-    const selectedItems = tableData.filter((_, idx) =>
+    const selectedItems = tableData.filter((_: unknown, idx: number) =>
       selectedIndexes.includes(idx)
     );
     if (selectedItems.length) {
@@ -198,25 +198,44 @@ export function DynamicCrudPage({ schema }: { schema: any }) {
       if (!apiRoutes.delete) {
         throw new Error('Delete API route is not defined.');
       }
-      const deletePromises = ids.map((id) => {
-        const deleteUrl = apiRoutes.delete.replace('<int:pk>', String(id));
-        return api.delete(deleteUrl);
-      });
-      return Promise.all(deletePromises);
-    },
-    onSuccess: (_, vars) => {
-      toast.success(`${vars.length} item(s) deleted successfully`);
-      queryClient.invalidateQueries({
-        queryKey: ['tableData', apiRoutes.get_all],
-      });
-      setItemsToDelete([]);
-      setRowSelection({});
-    },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Failed to delete items.');
-      setItemsToDelete([]);
-    },
-  });
+       // 🔥 CHANGED — individually call delete & return their full responses  
+    const deletePromises = ids.map(async (id) => {
+      const deleteUrl = apiRoutes.delete.replace('<int:pk>', String(id));
+      const res = await api.delete(deleteUrl);
+      return res.data; // return backend delete response
+    });
+
+    return Promise.all(deletePromises);
+  },
+  onSuccess: (responses, vars) => {
+    // If deleting multiple, show only main message of first one
+    const first = responses?.[0];
+
+    const message =
+      first?.message ||
+      `${vars.length} item(s) deleted successfully`;
+
+    toast.success(message);
+
+    queryClient.invalidateQueries({
+      queryKey: ['tableData', apiRoutes.get_all],
+    });
+
+    setItemsToDelete([]);
+    setRowSelection({});
+  },
+
+  onError: (err: any) => {
+    // 🔥 CHANGED — backend error fallback
+    const backendMessage =
+      err?.response?.data?.message ||
+      err?.message ||
+      'Failed to delete items.';
+
+    toast.error(backendMessage);
+    setItemsToDelete([]);
+  },
+});
 
   const confirmDelete = () => {
     if (itemsToDelete.length > 0) {

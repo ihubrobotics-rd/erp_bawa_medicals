@@ -551,10 +551,10 @@ export function RoleManagement() {
                                         />
                                       </div>
                                       
-                                      {functionalitiesBySubmodule.has(subPriv.submodule_name) && (
+                                      {functionalitiesBySubmodule.has(subPriv.submodule_name as string) && (
                                         <div className="mt-3 pt-3 pl-4 border-t space-y-2">
                                           {functionalitiesBySubmodule
-                                            .get(subPriv.submodule_name)!
+                                            .get(subPriv.submodule_name as string)!
                                             .map((funcPriv) => (
                                               <div
                                                 key={funcPriv.id}
