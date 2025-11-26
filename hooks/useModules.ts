@@ -27,8 +27,11 @@ export const useModules = (search: string = "") => {
             id: number;
             payload: { name: string; description: string };
         }) => api.updateModule(id, payload),
-        onSuccess: () =>
-            queryClient.invalidateQueries({ queryKey: ["modules"] }),
+
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["modules"] });
+            queryClient.invalidateQueries({ queryKey: ["privileges"] });
+        },
     });
 
     const deactivateModuleMutation = useMutation({
