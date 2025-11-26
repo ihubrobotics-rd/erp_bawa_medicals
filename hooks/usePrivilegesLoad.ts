@@ -13,14 +13,12 @@ type PaginatedResult = {
 
 // The new fetching function that handles pagination
 const fetchAllPrivileges = async (roleId: string) => {
-  // 1. Fetch the first page to get initial data and pagination info
   const initialResponse = await api.get(
-    `/Privilege/role/privileges/${roleId}/`
+    `/privilege/role/privileges/${roleId}/`
   );
   const firstPageData = initialResponse.data.data;
 
   if (!firstPageData) {
-    // Return a default structure if the API response is empty
     return {
       modules: { results: [] },
       submodules: { results: [] },
@@ -46,7 +44,7 @@ const fetchAllPrivileges = async (roleId: string) => {
   const pagePromises = [];
   for (let page = 2; page <= maxTotalPages; page++) {
     pagePromises.push(
-      api.get(`/Privilege/role/privileges/${roleId}/?page=${page}`)
+      api.get(`/privilege/role/privileges/${roleId}/?page=${page}`)
     );
   }
 
@@ -70,6 +68,8 @@ const fetchAllPrivileges = async (roleId: string) => {
       allFunctionalities.push(...pageData.functionalities.results);
     }
   });
+
+  
 
   // 6. Deduplicate merged arrays by their canonical id fields.
   // The API returns objects with both an internal `id` and a domain id

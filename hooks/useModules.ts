@@ -28,10 +28,14 @@ export const useModules = (search: string = "") => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["modules"] }),
   });
 
-  const deactivateModuleMutation = useMutation({
-    mutationFn: api.deactivateModule,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["modules"] }),
-  });
+const deactivateModuleMutation = useMutation({
+  mutationFn: api.deactivateModule,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["modules"] });
+    queryClient.invalidateQueries({ queryKey: ["privileges"] });
+  },
+});
+
 
   return {
     modulesQuery,

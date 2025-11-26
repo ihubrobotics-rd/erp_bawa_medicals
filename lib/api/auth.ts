@@ -1,3 +1,6 @@
+// role issue capitailazied
+
+
 // lib/api/auth.ts
 "use client";
 
