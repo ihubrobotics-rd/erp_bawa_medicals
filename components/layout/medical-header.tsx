@@ -40,7 +40,7 @@ export function MedicalHeader() {
     <header className="bg-white border-b border-border sticky top-0 z-50">
       {/* Top Banner */}
       <div className="bg-primary text-primary-foreground py-2 px-4 text-center text-sm">
-        Limited Period Offer: Get up to 25% off + extra 15% off on medicines &
+        Limited Period Offer: Get up to 25% off + extra 20% off on medicines &
         more offers.{" "}
         <Link href="/offers" className="underline font-medium">
           Explore

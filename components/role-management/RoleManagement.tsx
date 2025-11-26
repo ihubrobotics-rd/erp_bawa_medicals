@@ -99,7 +99,7 @@ export function RoleManagement() {
 
     {/* LEFT SIDE */}
     <div className="flex flex-col overflow-hidden">
-    <h4 className="font-medium sticky top-0 bg-white z-10 py-2">
+    <h4 className="font-medium sticky top-0  z-10 py-2">
       System Roles
     </h4>
 
@@ -117,7 +117,7 @@ export function RoleManagement() {
 
   {/* RIGHT SIDE */}
   <div className="flex flex-col overflow-hidden">
-    <h4 className="font-medium sticky top-0 bg-white z-10 py-2">
+    <h4 className="font-medium sticky top-0 z-10 py-2">
       Privileges
     </h4>
 

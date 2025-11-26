@@ -23,6 +23,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"; 
+import { useApiErrorHandler } from "@/hooks/useError";
 
 // Define types - Updated to match actual usage
 interface FieldSchema {
@@ -67,6 +68,7 @@ export function DynamicForm({
 
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   const initialDataRef = useRef(initialData);
+  const { handleError } = useApiErrorHandler();
 
   const formSchema = generateZodSchema(schema);
 
@@ -78,6 +80,7 @@ export function DynamicForm({
     reset,
     control,
     watch,
+    setError
   } = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {},
@@ -126,16 +129,15 @@ export function DynamicForm({
       onDirtyChange?.(false);
       onClose();
     },
-    onError: (error: any) => {
-      const backendData = error?.response?.data || {};
-      const message = backendData?.message || "An unexpected error occurred.";
-      const fieldErrors = backendData?.errors || {};
-      const details = Object.entries(fieldErrors)
-        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`)
-        .join("\n");
-      toast.error(`${message}${details ? "\n" + details : ""}`);
-    },
-  });
+     onError: (error: any) => {
+    const { generalMessage } = handleError(error, (field, msg) => {
+      setError(field, { message: msg });
+    });
+
+    // Show only the general backend message
+    toast.error(generalMessage);
+  },
+});
 
   const onSubmit: SubmitHandler<FieldValues> = (data) => {
     const sanitizedData = { ...data };
