@@ -84,11 +84,13 @@ export const useSubmodules = (moduleId: number | null, search: string = "") => {
 
     const deactivateSubmoduleMutation = useMutation({
         mutationFn: api.deactivateSubmodule,
-        onSuccess: () =>
+        onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ["submodules", moduleId],
-            }),
+            });
+        },
     });
+
     const createFunctionalityMutation = useMutation({
         mutationFn: api.createFunctionality,
         onSuccess: (data) => {
