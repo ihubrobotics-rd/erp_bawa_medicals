@@ -1,9 +1,15 @@
 // MedicalHeader.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, ShoppingCart, MapPin, ChevronDown, MenuIcon } from "lucide-react";
+import {
+    Search,
+    ShoppingCart,
+    MapPin,
+    ChevronDown,
+    MenuIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +21,6 @@ import {
 import { categories } from "@/data/catagories";
 import { useRouter } from "next/navigation";
 import { ModeToggle } from "../ui/ModeToggle";
-// ✅ IMPORT THE CENTRAL FUNCTION
 import { navigateToRoleOrLogin } from "@/lib/api/auth";
 
 const cities = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad"];
@@ -25,17 +30,23 @@ export function MedicalHeader() {
     const [searchQuery, setSearchQuery] = useState("");
     const [location, setLocation] = useState("Mumbai");
     const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // ✅ ADDED THIS LINE
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    // ✅ Simplified handleLogin function
     const handleLogin = async () => {
-        // This one function now handles everything:
-        // 1. Checks for a token.
-        // 2. If no token, routes to /login.
-        // 3. If token exists, refreshes if needed.
-        // 4. Routes to the correct dashboard based on role.
         await navigateToRoleOrLogin(router);
     };
+
+    // 🚀 FIX: Disable background scroll when mobile menu is open
+    useEffect(() => {
+        if (mobileMenuOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "auto";
+        }
+        return () => {
+            document.body.style.overflow = "auto";
+        };
+    }, [mobileMenuOpen]);
 
     return (
         <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-border dark:border-gray-700 sticky top-0 z-50 shadow-sm">
@@ -60,7 +71,7 @@ export function MedicalHeader() {
                     </span>
                 </Link>
 
-                {/* Mobile Hamburger */}
+                {/* Mobile Right Section */}
                 <div className="flex items-center gap-2 md:hidden">
                     <ModeToggle />
                     <button
@@ -71,8 +82,8 @@ export function MedicalHeader() {
                     </button>
                 </div>
 
-                {/* Desktop: Search + Cart + Login */}
-                <div className="hidden md:flex flex-1 items-center gap-4">
+                {/* Desktop Section */}
+                <div className="hidden md:flex flex-1 items-center gap-6">
                     {/* Location */}
                     <div className="flex items-center gap-2 text-sm">
                         <MapPin className="w-4 h-4 text-muted-foreground" />
@@ -86,6 +97,7 @@ export function MedicalHeader() {
                                     <ChevronDown className="w-3 h-3" />
                                 </Button>
                             </PopoverTrigger>
+
                             <PopoverContent className="w-52 rounded-xl shadow-lg border p-3 bg-white dark:bg-gray-900 dark:border-gray-700">
                                 <div className="flex flex-col gap-2">
                                     {cities.map((city) => (
@@ -106,7 +118,7 @@ export function MedicalHeader() {
                         </Popover>
                     </div>
 
-                    {/* Search */}
+                    {/* Search Bar */}
                     <div className="flex-1 relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                         <Input
@@ -117,7 +129,7 @@ export function MedicalHeader() {
                         />
                     </div>
 
-                    {/* Cart + Login */}
+                    {/* Right Side */}
                     <div className="flex items-center gap-4">
                         <Button
                             variant="ghost"
@@ -138,11 +150,13 @@ export function MedicalHeader() {
                                 2
                             </Badge>
                         </Button>
+
+                        <ModeToggle />
                     </div>
                 </div>
             </div>
 
-            {/* Navigation Mega Menu */}
+            {/* Mega Menu (Desktop) */}
             <div className="border-t border-border dark:border-gray-700 bg-white dark:bg-gray-900 hidden md:block">
                 <div className="container mx-auto px-4">
                     <nav className="flex items-center gap-6 py-3 overflow-x-auto horizontal-scroll">
@@ -150,9 +164,9 @@ export function MedicalHeader() {
                             <Popover
                                 key={category.name}
                                 open={hoveredCategory === category.name}
-                                onOpenChange={(open) => {
-                                    if (!open) setHoveredCategory(null);
-                                }}
+                                onOpenChange={(open) =>
+                                    !open && setHoveredCategory(null)
+                                }
                             >
                                 <PopoverTrigger asChild>
                                     <Button
@@ -187,6 +201,7 @@ export function MedicalHeader() {
                                             <span className="font-semibold text-primary">
                                                 {sub.name}
                                             </span>
+
                                             {sub.children ? (
                                                 <ul className="pl-2 space-y-1">
                                                     {sub.children.map(
@@ -223,9 +238,13 @@ export function MedicalHeader() {
                 </div>
             </div>
 
-            {/* Mobile Menu Drawer */}
+            {/* Mobile Menu */}
             {mobileMenuOpen && (
-                <div className="md:hidden bg-white dark:bg-gray-900 border-t border-border dark:border-gray-700 shadow-lg w-full absolute top-full left-0 z-40">
+                <div
+                    className="md:hidden bg-white dark:bg-gray-900 border-t border-border dark:border-gray-700 shadow-lg
+                    w-full absolute top-full left-0 z-40
+                    max-h-[75vh] overflow-y-auto"
+                >
                     <div className="flex flex-col px-4 py-3 gap-3">
                         {/* Search */}
                         <div className="relative">
@@ -244,6 +263,7 @@ export function MedicalHeader() {
                                 <span className="font-semibold py-2 border-b border-border dark:border-gray-700">
                                     {category.name}
                                 </span>
+
                                 {category.subcategories.map((sub) =>
                                     sub.children ? (
                                         <ul
@@ -274,7 +294,7 @@ export function MedicalHeader() {
                             </div>
                         ))}
 
-                        {/* Login + Mode Toggle */}
+                        {/* Login + ModeToggle */}
                         <div className="flex items-center gap-3 mt-3">
                             <ModeToggle />
                             <Button
