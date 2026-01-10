@@ -1,45 +1,46 @@
-"use client"
+"use client";
 
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { productSchema, type ProductFormData } from "@/utils/validation"
-import { Loader2 } from "lucide-react"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+import { productSchema, type ProductFormData } from "@/utils/validation";
+import { Loader2 } from "lucide-react";
 
 interface ProductFormProps {
-  initialData?: Partial<ProductFormData>
-  onSubmit: (data: ProductFormData) => Promise<void>
-  isLoading?: boolean
-  mode?: "create" | "edit"
+  initialData?: Partial<ProductFormData>;
+  onSubmit: (data: ProductFormData) => Promise<void>;
+  isLoading?: boolean;
+  mode?: "create" | "edit";
 }
 
 export function ProductForm({ initialData, onSubmit, isLoading = false, mode = "create" }: ProductFormProps) {
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: initialData?.name || "",
-      description: initialData?.description || "",
-      price: initialData?.price || 0,
-      stock: initialData?.stock || 0,
-      category: initialData?.category || "",
-      sku: initialData?.sku || "",
+      name: initialData?.name ?? "",
+      description: initialData?.description ?? "",
+      price: initialData?.price ?? 0,
+      stock: initialData?.stock ?? 0,
+      category: initialData?.category ?? "",
+      sku: initialData?.sku ?? "",
+      isActive: initialData?.isActive ?? true,
     },
-  })
+  });
 
   const handleSubmit = async (data: ProductFormData) => {
     try {
-      await onSubmit(data)
-      if (mode === "create") {
-        form.reset()
-      }
+      await onSubmit(data);
+      if (mode === "create") form.reset();
     } catch (error) {
-      console.error("Form submission error:", error)
+      console.error("Form submission error:", error);
     }
-  }
+  };
 
   return (
     <Card>
@@ -49,9 +50,12 @@ export function ProductForm({ initialData, onSubmit, isLoading = false, mode = "
           {mode === "create" ? "Add a new product to the catalog" : "Update product information"}
         </CardDescription>
       </CardHeader>
+
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+
+            {/* Name + SKU */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -66,6 +70,7 @@ export function ProductForm({ initialData, onSubmit, isLoading = false, mode = "
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="sku"
@@ -80,6 +85,8 @@ export function ProductForm({ initialData, onSubmit, isLoading = false, mode = "
                 )}
               />
             </div>
+
+            {/* Description */}
             <FormField
               control={form.control}
               name="description"
@@ -93,6 +100,8 @@ export function ProductForm({ initialData, onSubmit, isLoading = false, mode = "
                 </FormItem>
               )}
             />
+
+            {/* Price / Stock / Category */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -105,14 +114,15 @@ export function ProductForm({ initialData, onSubmit, isLoading = false, mode = "
                         type="number"
                         step="0.01"
                         placeholder="0.00"
-                        {...field}
-                        onChange={(e) => field.onChange(Number.parseFloat(e.target.value) || 0)}
+                        value={field.value}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="stock"
@@ -123,14 +133,15 @@ export function ProductForm({ initialData, onSubmit, isLoading = false, mode = "
                       <Input
                         type="number"
                         placeholder="0"
-                        {...field}
-                        onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                        value={field.value}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="category"
@@ -145,18 +156,22 @@ export function ProductForm({ initialData, onSubmit, isLoading = false, mode = "
                 )}
               />
             </div>
+
+            {/* Buttons */}
             <div className="flex gap-2">
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {mode === "create" ? "Create Product" : "Update Product"}
               </Button>
+
               <Button type="button" variant="outline" onClick={() => form.reset()}>
                 Reset
               </Button>
             </div>
+
           </form>
         </Form>
       </CardContent>
     </Card>
-  )
+  );
 }

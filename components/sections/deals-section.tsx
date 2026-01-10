@@ -1,10 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { MedicineCard } from "@/components/medicine/medicine-card"
-import type { Medicine } from "@/types/medical"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { MedicineCard } from "@/components/medicine/medicine-card";
+import type { Medicine } from "@/types/medical";
 
 const mockMedicines: Medicine[] = [
   {
@@ -107,124 +106,183 @@ const mockMedicines: Medicine[] = [
     createdAt: "2024-01-01",
     updatedAt: "2024-01-01",
   },
-  {
+    {
     id: "5",
-    name: "Prolyte ORS Ready To Drink Body Fluid & Electrolyte",
-    brand: "Prolyte",
-    genericName: "ORS Solution",
-    category: "Medicines",
-    subcategory: "Electrolytes",
-    price: 22.4,
-    mrp: 32.04,
-    discount: 30,
-    stock: 100,
-    minStock: 20,
-    description: "Ready to drink ORS for electrolyte balance",
-    dosage: "As directed by physician",
-    packSize: "box of 200.0 ml Liquid",
-    manufacturer: "Abbott",
-    expiryDate: "2025-05-31",
-    batchNumber: "PR005",
-    prescription: false,
-    images: ["/ors-drink.jpg"],
-    tags: ["ORS", "electrolytes", "rehydration"],
-    isActive: true,
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-  },
-  {
-    id: "6",
-    name: "I-Feel Gentle Intimate Wash I Safe during Pregnancy",
-    brand: "I-Feel",
-    genericName: "Intimate Wash",
+    name: "3M Avagard CHG Handrub Hand Sanitizer",
+    brand: "3M",
+    genericName: "Hand Sanitizer",
     category: "Personal Care",
-    subcategory: "Women Care",
-    price: 129,
-    mrp: 175,
-    discount: 26,
-    stock: 35,
-    minStock: 8,
-    description: "Gentle intimate wash safe for pregnancy",
-    dosage: "Use as directed",
-    packSize: "pump bottle of 100.0 ml",
-    manufacturer: "I-Feel",
-    expiryDate: "2025-07-31",
-    batchNumber: "IF006",
+    subcategory: "Hygiene",
+    price: 749,
+    mrp: 998,
+    discount: 25,
+    stock: 40,
+    minStock: 10,
+    description: "Professional grade hand sanitizer with CHG",
+    dosage: "Apply as needed",
+    packSize: "bottle of 500.0 ml Sanitizer",
+    manufacturer: "3M",
+    expiryDate: "2025-08-31",
+    batchNumber: "3M004",
     prescription: false,
-    images: ["/intimate-wash.jpg"],
-    tags: ["intimate care", "women health", "pregnancy safe"],
+    images: ["/hand-sanitizer.jpg"],
+    tags: ["sanitizer", "hygiene", "hand care"],
+    isActive: true,
+    createdAt: "2024-01-01",
+    updatedAt: "2024-01-01",
+  },  {
+    id: "6",
+    name: "3M Avagard CHG Handrub Hand Sanitizer",
+    brand: "3M",
+    genericName: "Hand Sanitizer",
+    category: "Personal Care",
+    subcategory: "Hygiene",
+    price: 749,
+    mrp: 998,
+    discount: 25,
+    stock: 40,
+    minStock: 10,
+    description: "Professional grade hand sanitizer with CHG",
+    dosage: "Apply as needed",
+    packSize: "bottle of 500.0 ml Sanitizer",
+    manufacturer: "3M",
+    expiryDate: "2025-08-31",
+    batchNumber: "3M004",
+    prescription: false,
+    images: ["/hand-sanitizer.jpg"],
+    tags: ["sanitizer", "hygiene", "hand care"],
+    isActive: true,
+    createdAt: "2024-01-01",
+    updatedAt: "2024-01-01",
+  },  {
+    id: "7",
+    name: "3M Avagard CHG Handrub Hand Sanitizer",
+    brand: "3M",
+    genericName: "Hand Sanitizer",
+    category: "Personal Care",
+    subcategory: "Hygiene",
+    price: 749,
+    mrp: 998,
+    discount: 25,
+    stock: 40,
+    minStock: 10,
+    description: "Professional grade hand sanitizer with CHG",
+    dosage: "Apply as needed",
+    packSize: "bottle of 500.0 ml Sanitizer",
+    manufacturer: "3M",
+    expiryDate: "2025-08-31",
+    batchNumber: "3M004",
+    prescription: false,
+    images: ["/hand-sanitizer.jpg"],
+    tags: ["sanitizer", "hygiene", "hand care"],
+    isActive: true,
+    createdAt: "2024-01-01",
+    updatedAt: "2024-01-01",
+  },  {
+    id: "8",
+    name: "3M Avagard CHG Handrub Hand Sanitizer",
+    brand: "3M",
+    genericName: "Hand Sanitizer",
+    category: "Personal Care",
+    subcategory: "Hygiene",
+    price: 749,
+    mrp: 998,
+    discount: 25,
+    stock: 40,
+    minStock: 10,
+    description: "Professional grade hand sanitizer with CHG",
+    dosage: "Apply as needed",
+    packSize: "bottle of 500.0 ml Sanitizer",
+    manufacturer: "3M",
+    expiryDate: "2025-08-31",
+    batchNumber: "3M004",
+    prescription: false,
+    images: ["/hand-sanitizer.jpg"],
+    tags: ["sanitizer", "hygiene", "hand care"],
+    isActive: true,
+    createdAt: "2024-01-01",
+    updatedAt: "2024-01-01",
+  },  {
+    id: "9",
+    name: "3M Avagard CHG Handrub Hand Sanitizer",
+    brand: "3M",
+    genericName: "Hand Sanitizer",
+    category: "Personal Care",
+    subcategory: "Hygiene",
+    price: 749,
+    mrp: 998,
+    discount: 25,
+    stock: 40,
+    minStock: 10,
+    description: "Professional grade hand sanitizer with CHG",
+    dosage: "Apply as needed",
+    packSize: "bottle of 500.0 ml Sanitizer",
+    manufacturer: "3M",
+    expiryDate: "2025-08-31",
+    batchNumber: "3M004",
+    prescription: false,
+    images: ["/hand-sanitizer.jpg"],
+    tags: ["sanitizer", "hygiene", "hand care"],
     isActive: true,
     createdAt: "2024-01-01",
     updatedAt: "2024-01-01",
   },
-]
+];
 
 export function DealsSection() {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const itemsPerView = 4
-  const maxIndex = Math.max(0, mockMedicines.length - itemsPerView)
-
-  const handlePrevious = () => {
-    setCurrentIndex(Math.max(0, currentIndex - 1))
-  }
-
-  const handleNext = () => {
-    setCurrentIndex(Math.min(maxIndex, currentIndex + 1))
-  }
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const itemsPerView = 4;
+  const maxIndex = Math.max(0, mockMedicines.length - itemsPerView);
 
   const handleAddToCart = (medicine: Medicine) => {
-    console.log("Adding to cart:", medicine.name)
-    // TODO: Implement cart functionality
-  }
+    console.log("Adding to cart:", medicine.name);
+  };
+
+  // Auto-play effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+    }, 3000); // Change slide every 3 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, [maxIndex]);
 
   return (
-    <section className="py-8 bg-gray-50">
+    <section className="py-14 bg-gray-50 dark:bg-[#0D0D0D] transition-all">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Deals of the day</h2>
+        {/* HEADER */}
+        <div className="flex items-center justify-between mb-10">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+            Deals of the Day
+          </h2>
+
           <Button
             variant="outline"
-            className="text-primary border-primary hover:bg-primary hover:text-white bg-transparent"
+            className="rounded-xl px-6 py-2 text-primary border-primary
+            hover:bg-primary hover:text-white
+            dark:text-white dark:border-white/30 dark:hover:bg-white dark:hover:text-black
+            shadow-sm transition"
           >
             SEE ALL
           </Button>
         </div>
 
-        <div className="relative">
-          <div className="flex gap-4 overflow-hidden">
-            <div
-              className="flex gap-4 transition-transform duration-300 ease-in-out"
-              style={{ transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)` }}
-            >
-              {mockMedicines.map((medicine) => (
-                <div key={medicine.id} className="flex-shrink-0 w-1/4">
-                  <MedicineCard medicine={medicine} onAddToCart={handleAddToCart} />
-                </div>
-              ))}
-            </div>
+        {/* SLIDER CONTAINER */}
+        <div className="overflow-hidden">
+          <div
+            className="flex gap-6 transition-transform duration-700 ease-out"
+            style={{
+              transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
+            }}
+          >
+            {mockMedicines.map((medicine) => (
+              <div key={medicine.id} className="flex-shrink-0 w-1/4 min-w-[250px]">
+                <MedicineCard medicine={medicine} onAddToCart={handleAddToCart} />
+              </div>
+            ))}
           </div>
-
-          {/* Navigation buttons */}
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white shadow-lg"
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white shadow-lg"
-            onClick={handleNext}
-            disabled={currentIndex >= maxIndex}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
         </div>
       </div>
     </section>
-  )
+  );
 }

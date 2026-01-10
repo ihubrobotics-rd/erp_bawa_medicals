@@ -9,7 +9,7 @@ export type Role = {
   created_at: string;
 };
 
-type CreateRolePayload = {
+export type CreateRolePayload = {
   name: string;
   description: string;
   is_active: boolean;

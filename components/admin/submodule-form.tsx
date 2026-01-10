@@ -16,7 +16,7 @@ import { useToast } from "@/components/ui/use-toast";
 const submoduleSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().min(1, "Description is required"),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
   module: z.number(),
 });
 
@@ -35,6 +35,12 @@ export function SubmoduleForm({ submodule, moduleId, onClose }: SubmoduleFormPro
 
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<SubmoduleFormData>({
     resolver: zodResolver(submoduleSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      is_active: true,
+      module: moduleId,
+    },
   });
 
   useEffect(() => {

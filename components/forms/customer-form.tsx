@@ -26,6 +26,7 @@ export function CustomerForm({ initialData, onSubmit, isLoading = false, mode = 
       phone: initialData?.phone || "",
       address: initialData?.address || "",
       company: initialData?.company || "",
+      isActive: initialData?.isActive ?? true,
     },
   })
 
@@ -102,7 +103,7 @@ export function CustomerForm({ initialData, onSubmit, isLoading = false, mode = 
                     <FormControl>
                       <Input placeholder="Enter phone number" {...field} />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage /> 
                   </FormItem>
                 )}
               />

@@ -11,9 +11,11 @@ interface FunctionalityRowProps {
         value: boolean
     ) => void;
     isLoading: boolean;
+      // ⭐ CHANGE
+  editMode?: boolean;
 }
 
-export const FunctionalityRow = ({ funcPriv, onUpdate, isLoading }: FunctionalityRowProps) => {
+export const FunctionalityRow = ({ funcPriv, onUpdate, isLoading ,editMode}: FunctionalityRowProps) => {
     return (
          <div
             key={funcPriv.id}
@@ -27,6 +29,7 @@ export const FunctionalityRow = ({ funcPriv, onUpdate, isLoading }: Functionalit
                 privileges={funcPriv}
                 onUpdate={(key, value) => onUpdate(funcPriv, key, value)}
                 isLoading={isLoading}
+                 disabled={!editMode}   // ⭐ NEW LINE — same behaviour as modules + submodules
             />
         </div>
     )

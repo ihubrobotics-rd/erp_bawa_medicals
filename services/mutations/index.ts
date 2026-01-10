@@ -1,4 +1,3 @@
-export * from "./users"
-export * from "./products"
-export * from "./employees"
-export * from "./customers"
+// Placeholder module for future mutation helpers.
+// Intentionally left blank to avoid unresolved module exports.
+export {}
